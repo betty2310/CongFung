@@ -4,8 +4,12 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QDialog>
+#include <QMessageBox>
+#include <QProcess>
+#include <QThread>
 
 #include "settingdialog.h"
+#include "tools/blocksinfo.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -33,8 +37,16 @@ private slots:
 
     void on_dashboardBtn_clicked();
 
+    void on_runWipeBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     SettingDialog *settingDialog;
+    BlocksInfo *blkInfo;
+
+    void setupWipePage();
+    void setupDashboardPage();
+    void updateWipeTable();
+    void updateDashboardTable();
 };
 #endif // MAINWINDOW_H
