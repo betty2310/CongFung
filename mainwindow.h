@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QDebug>
+#include <QDialog>
+
+#include "settingdialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -19,11 +22,17 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_st1_btn_clicked();
 
-    void on_st2_btn_clicked();
+    void on_createForensicImageBtn_clicked();
+
+    void on_cloneDiskBtn_clicked();
+
+    void on_wipeBtn_clicked();
+
+    void on_settingsBtn_clicked();
 
 private:
     Ui::MainWindow *ui;
+    SettingDialog *settingDialog;
 };
 #endif // MAINWINDOW_H

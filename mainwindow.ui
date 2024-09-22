@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1000</width>
     <height>600</height>
    </rect>
   </property>
@@ -14,53 +14,152 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QStackedWidget" name="stackedWidget">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>80</y>
-      <width>481</width>
-      <height>371</height>
-     </rect>
-    </property>
-    <widget class="QWidget" name="page">
-     <widget class="QPushButton" name="st1_btn">
-      <property name="geometry">
-       <rect>
-        <x>180</x>
-        <y>160</y>
-        <width>151</width>
-        <height>26</height>
-       </rect>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QWidget" name="sidebar" native="true">
+      <property name="styleSheet">
+       <string notr="true">QWidget#sidebar {
+    background-color: #2c3e50;
+}
+QLabel {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px 0;
+}
+QPushButton {
+    background-color: transparent;
+    color: white;
+    border: none;
+    text-align: left;
+    padding: 10px;
+    font-size: 16px;
+}
+QPushButton:hover {
+    background-color: #34495e;
+}
+QPushButton:checked {
+    background-color: #3498db;
+}
+#settingsBtn {
+    background-color: #34495e;
+}</string>
       </property>
-      <property name="text">
-       <string>button on stack 1</string>
-      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="logoLabel">
+         <property name="text">
+          <string>HUST</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="createForensicImageBtn">
+         <property name="text">
+          <string>Create Forensic Image</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="cloneDiskBtn">
+         <property name="text">
+          <string>Clone Disk</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="wipeBtn">
+         <property name="text">
+          <string>Wipe</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="settingsBtn">
+         <property name="text">
+          <string>Settings</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
-    </widget>
-    <widget class="QWidget" name="page_2">
-     <widget class="QPushButton" name="st2_btn">
-      <property name="geometry">
-       <rect>
-        <x>160</x>
-        <y>160</y>
-        <width>191</width>
-        <height>26</height>
-       </rect>
+    </item>
+    <item>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <property name="styleSheet">
+       <string notr="true"/>
       </property>
-      <property name="text">
-       <string>button on stack 2</string>
-      </property>
+      <widget class="QWidget" name="page">
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>200</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Create Forensic Image Page</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="page_2">
+       <widget class="QLabel" name="label_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>200</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Clone Disk Page</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="page_3">
+       <widget class="QLabel" name="label_3">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>200</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Wipe Page</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-    </widget>
-   </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1000</width>
      <height>23</height>
     </rect>
    </property>

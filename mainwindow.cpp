@@ -4,6 +4,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , settingDialog(nullptr)
 {
     ui->setupUi(this);
 }
@@ -13,15 +14,34 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_st1_btn_clicked()
+
+
+void MainWindow::on_createForensicImageBtn_clicked()
 {
-    qDebug() << "button 1 clicked!";
-    ui->stackedWidget->setCurrentWidget(ui->page_2);
+    ui->stackedWidget->setCurrentIndex(0);
+    ui->createForensicImageBtn->setChecked(true);
 }
 
 
-void MainWindow::on_st2_btn_clicked()
+void MainWindow::on_cloneDiskBtn_clicked()
 {
-    ui->stackedWidget->setCurrentWidget(ui->page);
+    ui->stackedWidget->setCurrentIndex(1);
+    ui->cloneDiskBtn->setChecked(true);
+}
+
+
+void MainWindow::on_wipeBtn_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(2);
+    ui->wipeBtn->setChecked(true);
+}
+
+
+void MainWindow::on_settingsBtn_clicked()
+{
+    if (!settingDialog) {
+        settingDialog = new SettingDialog(this);
+    }
+    settingDialog->show();
 }
 
