@@ -31,6 +31,8 @@ private slots:
 
     void on_settingsBtn_clicked();
 
+    void on_dashboardBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     SettingDialog *settingDialog;
