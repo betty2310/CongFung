@@ -38,22 +38,36 @@ void MainWindow::updateDashboardTable()
 }
 
 void MainWindow::setupWipePage() {
-    ui->wipeTable->setColumnCount(4);
-    ui->wipeTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type"});
+    ui->wipeTable->setColumnCount(5);
+    ui->wipeTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type", "Tran"});
     updateWipeTable();
 }
 
 void MainWindow::updateWipeTable()
 {
-    QList<Block> diskPartitions = blkInfo->getBlocksInfo();
-    ui->wipeTable->setRowCount(diskPartitions.size());
+    QList<Block> blocks = blkInfo->getBlocksInfo();
 
-    for (int i = 0; i < diskPartitions.size(); ++i) {
-        const Block &dp = diskPartitions[i];
+    int displayRows = blocks.size();
+
+    for(int i = 0; i< blocks.size(); ++i) {
+        if(blocks[i].tran == "nvme") {
+            displayRows--;
+        }
+    }
+
+    ui->wipeTable->setRowCount(displayRows);
+
+    for (int i = 0; i < blocks.size(); ++i) {
+        const Block &dp = blocks[i];
+        if(dp.tran == "nvme") {
+            continue;
+        }
         ui->wipeTable->setItem(i, 0, new QTableWidgetItem(dp.name));
         ui->wipeTable->setItem(i, 1, new QTableWidgetItem(dp.path));
         ui->wipeTable->setItem(i, 2, new QTableWidgetItem(dp.size));
         ui->wipeTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
+        ui->wipeTable->setItem(i, 4, new QTableWidgetItem(dp.tran));
+
     }
 }
 

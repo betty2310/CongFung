@@ -10,6 +10,7 @@ struct Block
     QString name;
     QString path;
     QString size;
+    QString tran;
     bool isPartition;
 };
 

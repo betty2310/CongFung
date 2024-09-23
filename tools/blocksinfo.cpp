@@ -37,5 +37,21 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
         }
     }
 
+    QProcess process;
+    process.start("lsblk", QStringList() << "-no" << "NAME,TRAN");
+    process.waitForFinished();
+    QString tranOutput = process.readAllStandardOutput();
+    QStringList tranLines = tranOutput.split("\n", Qt::SkipEmptyParts);
+
+    for (const QString &line : tranLines) {
+        QStringList parts = line.split(" ", Qt::SkipEmptyParts);
+        if (parts.size() >= 2) {
+            for(auto &blk : blocks) {
+                if(blk.name == parts[0]) {
+                    blk.tran = parts[1];
+                }
+            }
+        }
+    }
     return blocks;
 }
