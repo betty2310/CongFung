@@ -7,9 +7,11 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QThread>
+#include <QDateTime>
 
 #include "settingdialog.h"
 #include "tools/blocksinfo.h"
+#include "worker.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -38,6 +40,12 @@ private slots:
     void on_dashboardBtn_clicked();
 
     void on_runWipeBtn_clicked();
+
+    void onWipeTaskFinished(const QString &taskId, bool success);
+
+    void onWipeProgressUpdate(const QString &taskId, const QString &progress);
+
+    void onStopTaskClicked(const QString &taskId, Worker *worker, QThread *workerThread);
 
 private:
     Ui::MainWindow *ui;

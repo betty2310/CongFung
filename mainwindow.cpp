@@ -23,18 +23,18 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::setupDashboardPage() {
-    ui->dashboardTable->setColumnCount(1);
-    ui->dashboardTable->setHorizontalHeaderLabels({"Task ID"});
+    ui->dashboardTable->setColumnCount(4);
+    ui->dashboardTable->setHorizontalHeaderLabels({"Task ID", "Status"});
 
     updateDashboardTable();
 }
 
 void MainWindow::updateDashboardTable()
 {
-    // For now, we'll just add a dummy task ID
-    int rowCount = ui->dashboardTable->rowCount();
-    ui->dashboardTable->insertRow(rowCount);
-    ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(QString("Task %1").arg(rowCount + 1)));
+    // // For now, we'll just add a dummy task ID
+    // int rowCount = ui->dashboardTable->rowCount();
+    // ui->dashboardTable->insertRow(rowCount);
+    // ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(QString("Task %1").arg(rowCount + 1)));
 }
 
 void MainWindow::setupWipePage() {
@@ -132,44 +132,77 @@ void MainWindow::on_runWipeBtn_clicked()
 
     QString path = ui->wipeTable->item(selectedItems[0]->row(), 1)->text();
 
+    QString taskId = QString("Wipe_%1").arg(QDateTime::currentDateTime().toString("yyymmmDDD__hhmmss"));
+
     qDebug() << path;
 
-    QThread *wipeThread = QThread::create([this, path]() {
+    QThread *workerThread = new QThread();
+    Worker *worker = new Worker(taskId, path);
+    worker->moveToThread(workerThread);
 
-        QProcess process;
+    // Add task to dashboard
+    int rowCount = ui->dashboardTable->rowCount();
+    ui->dashboardTable->insertRow(rowCount);
+    ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(taskId));
 
-        // Connect signals to capture output
-        connect(&process, &QProcess::readyReadStandardOutput, [&process]() {
-            QString output = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
-            qDebug() << "DD Progress:" << output;
-        });
-
-        connect(&process, &QProcess::readyReadStandardError, [&process]() {
-            QString error = QString::fromUtf8(process.readAllStandardError()).trimmed();
-            qDebug() << "DD Error:" << error;
-        });
-
-
-        process.start("pkexec", QStringList() << "dd" << "if=/dev/zero" << QString("of=%1").arg(path) << "bs=4M" << "status=progress");
-        qDebug() << "DD process started in thread:" << QThread::currentThread();
-        process.waitForFinished(-1);
-
-        if (process.exitStatus() == QProcess::NormalExit) {
-            int exitCode = process.exitCode();
-            if (exitCode == 0) {
-                qDebug() << "dd command executed successfully";
-            } else {
-                qDebug() << "dd command failed with exit code:" << exitCode;
-            }
-        } else {
-            qDebug() << "dd command crashed or was terminated";
-        }
-
-
+    // Add Stop button
+    QPushButton *stopButton = new QPushButton("Stop");
+    ui->dashboardTable->setCellWidget(rowCount, 2, stopButton);
+    connect(stopButton, &QPushButton::clicked, this, [this, taskId, worker, workerThread]() {
+        this->onStopTaskClicked(taskId, worker, workerThread);
     });
-    connect(wipeThread, &QThread::finished, wipeThread, &QThread::deleteLater);
-    wipeThread->start();
 
-    updateDashboardTable();
+    connect(workerThread, &QThread::started, worker, &Worker::process);
+    connect(worker, &Worker::finished, this, &MainWindow::onWipeTaskFinished);
+    connect(worker, &Worker::progressUpdate, this, &MainWindow::onWipeProgressUpdate);
+    connect(workerThread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+    workerThread->start();
 }
 
+void MainWindow::onWipeTaskFinished(const QString &taskId, bool success)
+{
+    // Update dashboard with task completion status
+    for (int i = 0; i < ui->dashboardTable->rowCount(); ++i) {
+        if (ui->dashboardTable->item(i, 0)->text() == taskId) {
+            ui->dashboardTable->setItem(i, 1, new QTableWidgetItem(success ? "Completed" : "Failed"));
+            ui->dashboardTable->cellWidget(i, 2)->setEnabled(false);
+            break;
+        }
+    }
+}
+
+void MainWindow::onWipeProgressUpdate(const QString &taskId, const QString &progress)
+{
+    // Update dashboard with task progress
+    for (int i = 0; i < ui->dashboardTable->rowCount(); ++i) {
+        if (ui->dashboardTable->item(i, 0)->text() == taskId) {
+            ui->dashboardTable->setItem(i, 1, new QTableWidgetItem(progress));
+            break;
+        }
+    }
+}
+
+void MainWindow::onStopTaskClicked(const QString &taskId, Worker *worker, QThread *workerThread)
+{
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Confirm Stop Task",
+                                  "Are you sure you want to stop this task?",
+                                  QMessageBox::Yes|QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        worker->requestInterruption();
+        workerThread->quit();
+        workerThread->wait();
+
+        // Update dashboard
+        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i) {
+            if (ui->dashboardTable->item(i, 0)->text() == taskId) {
+                ui->dashboardTable->setItem(i, 1, new QTableWidgetItem("Stopped"));
+                ui->dashboardTable->cellWidget(i, 2)->setEnabled(false);
+                break;
+            }
+        }
+    }
+}
