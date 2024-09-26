@@ -22,6 +22,7 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
     QList<Block> blocks;
     QStringList lines = output.split("\n", Qt::SkipEmptyParts);
 
+
     for (const QString &line : lines) {
         QStringList parts = line.split(" ", Qt::SkipEmptyParts);
         if (parts.size() >= 4) {
@@ -29,13 +30,31 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
             blk.name = parts[0];
             blk.path = parts[1];
             blk.size = parts[2];
+            blk.parent = nullptr;
             if(parts[3] == "loop") {
                 continue;
             }
-            blk.isPartition = (parts[3] == "part");
+            blk.isPartition = parts[3] == "part" ? true: false;
             blocks.append(blk);
         }
     }
+
+    for(int i = 0; i < blocks.count(); ++i) {
+        for(int j = 0; j < blocks.count(); ++j) {
+            if(blocks[i].path.contains(blocks[j].name) && blocks[i].name != blocks[j].name) {
+                blocks[i].parent = &blocks[j];
+            }
+        }
+    }
+
+    for(auto &blk : blocks) {
+        if(blk.parent != nullptr) {
+            qDebug() << blk.name << blk.parent->name;
+        } else {
+            qDebug() << blk.name;
+        }
+    }
+
 
     QProcess process;
     process.start("lsblk", QStringList() << "-no" << "NAME,TRAN");
@@ -53,5 +72,7 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
             }
         }
     }
+
+
     return blocks;
 }

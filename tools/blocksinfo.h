@@ -12,6 +12,7 @@ struct Block
     QString size;
     QString tran;
     bool isPartition;
+    Block *parent;
 };
 
 class BlocksInfo : public QObject

@@ -8,6 +8,7 @@
 #include <QProcess>
 #include <QThread>
 #include <QDateTime>
+#include <unistd.h>
 
 #include "settingdialog.h"
 #include "tools/blocksinfo.h"
@@ -47,13 +48,17 @@ private slots:
 
     void onStopTaskClicked(const QString &taskId, Worker *worker, QThread *workerThread);
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
+    bool isRootUser;
     SettingDialog *settingDialog;
     BlocksInfo *blkInfo;
 
     void setupWipePage();
     void setupDashboardPage();
+    void setupCreateForensicImagePage();
     void updateWipeTable();
     void updateDashboardTable();
 };

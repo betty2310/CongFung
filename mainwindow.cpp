@@ -4,17 +4,18 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , isRootUser(false)
     , settingDialog(new SettingDialog(this))
     , blkInfo(new BlocksInfo(this))
 {
     ui->setupUi(this);
 
     ui->stackedWidget->setCurrentWidget(ui->dashboardPage);
-
-    qDebug() << "Application run on thread:" << QThread::currentThread();
-
     setupDashboardPage();
     setupWipePage();
+    setupCreateForensicImagePage();
+
+    isRootUser = getuid() ? false : true;
 }
 
 MainWindow::~MainWindow()
@@ -27,6 +28,46 @@ void MainWindow::setupDashboardPage() {
     ui->dashboardTable->setHorizontalHeaderLabels({"Task ID", "Status"});
 
     updateDashboardTable();
+}
+
+void MainWindow::setupCreateForensicImagePage() {
+    ui->sourceDiskTable->setColumnCount(5);
+    ui->sourceDiskTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type", "Tran"});
+    QList<Block> blocks = blkInfo->getBlocksInfo();
+
+    int displayRows = blocks.size();
+    QList<Block> displayBlocks;
+
+    for(int i = 0; i< blocks.size(); ++i) {
+
+        if(blocks[i].tran == "nvme") { // mean os drive, can't modify
+            displayRows--;
+        } else if (blocks[i].tran == "") {  // logical disk: partition or raid?
+            if(blocks[i].parent == nullptr) {
+                displayRows--;
+            } else {
+                displayBlocks.append(blocks[i]);
+            }
+        } else {
+            qDebug() << blocks[i].name;
+            displayBlocks.append(blocks[i]);
+        }
+
+    }
+
+    ui->sourceDiskTable->setRowCount(displayRows);
+
+    for (int i = 0; i < displayBlocks.size(); ++i) {
+
+        const Block &dp = displayBlocks[i];
+
+        ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(dp.name));
+        ui->sourceDiskTable->setItem(i, 1, new QTableWidgetItem(dp.path));
+        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(dp.size));
+        ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
+        ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(dp.tran));
+    }
+
 }
 
 void MainWindow::updateDashboardTable()
@@ -88,6 +129,7 @@ void MainWindow::on_createForensicImageBtn_clicked()
     ui->wipeBtn->setChecked(false);
     ui->cloneDiskBtn->setChecked(false);
     ui->dashboardBtn->setChecked(false);
+
 }
 
 
@@ -206,3 +248,9 @@ void MainWindow::onStopTaskClicked(const QString &taskId, Worker *worker, QThrea
         }
     }
 }
+
+void MainWindow::on_pushButton_clicked()
+{
+    updateWipeTable();
+}
+
