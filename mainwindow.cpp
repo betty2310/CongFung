@@ -82,15 +82,28 @@ void MainWindow::updateSourceDiskTable() {
 void MainWindow::updateDestinationDisksTable() {
     QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
 
-    ui->destinationsDiskTable->setRowCount(megaDisks.count());
+    int displayRows = megaDisks.size();
+    QList<MegaDisk> displayMegaDisks;
 
-    for(int i = 0; i < megaDisks.count(); ++i) {
-        ui->destinationsDiskTable->setItem(i, 0, new QTableWidgetItem(QString::number(megaDisks[i].deviceId)));
-        ui->destinationsDiskTable->setItem(i, 1, new QTableWidgetItem(QString::number(megaDisks[i].slotNumber)));
-        ui->destinationsDiskTable->setItem(i, 2, new QTableWidgetItem(QString::number(megaDisks[i].enclosureDeviceId)));
-        ui->destinationsDiskTable->setItem(i, 3, new QTableWidgetItem(megaDisks[i].rawSize));
-        ui->destinationsDiskTable->setItem(i, 4, new QTableWidgetItem(megaDisks[i].deviceSpeed));
-        ui->destinationsDiskTable->setItem(i, 5, new QTableWidgetItem(megaDisks[i].inquiryData));
+    for(int i = 0; i < megaDisks.size(); ++i) {
+        if(megaDisks[i].raidState == "Online") {
+            displayRows--;
+        } else {
+            displayMegaDisks.append(megaDisks[i]);
+        }
+
+    }
+
+    ui->destinationsDiskTable->setRowCount(displayRows);
+
+    for(int i = 0; i < displayMegaDisks.count(); ++i) {
+
+        ui->destinationsDiskTable->setItem(i, 0, new QTableWidgetItem(QString::number(displayMegaDisks[i].deviceId)));
+        ui->destinationsDiskTable->setItem(i, 1, new QTableWidgetItem(QString::number(displayMegaDisks[i].slotNumber)));
+        ui->destinationsDiskTable->setItem(i, 2, new QTableWidgetItem(QString::number(displayMegaDisks[i].enclosureDeviceId)));
+        ui->destinationsDiskTable->setItem(i, 3, new QTableWidgetItem(displayMegaDisks[i].rawSize));
+        ui->destinationsDiskTable->setItem(i, 4, new QTableWidgetItem(displayMegaDisks[i].deviceSpeed));
+        ui->destinationsDiskTable->setItem(i, 5, new QTableWidgetItem(displayMegaDisks[i].inquiryData));
     }
 
     ui->destinationsDiskTable->setColumnWidth(5, 400);
@@ -282,5 +295,34 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_sourceDiskTableReloadBtn_clicked()
 {
     updateSourceDiskTable();
+}
+
+
+void MainWindow::on_createImageTaskBtn_clicked()
+{
+    QList<QTableWidgetItem*> selectedItems = ui->destinationsDiskTable->selectedItems();
+    QList<int> selectedRows;
+
+    for(const auto &item: selectedItems) {
+        if(!selectedRows.contains(item->row())) {
+            selectedRows.append(item->row());
+        }
+    }
+
+    if(selectedRows.count() == 0) {
+        QMessageBox::warning(this, "Invalid selection", "Please select at least on disk");
+        return;
+    }
+
+    QList<QString> raidArrays;
+    for(int i = 0; i < selectedRows.size(); ++i) {
+        QString enclosureId = ui->destinationsDiskTable->item(selectedRows[i], 2)->text();
+        QString slotId = ui->destinationsDiskTable->item(selectedRows[i], 1)->text();
+        QString pd = QString("%1:%2").arg(enclosureId).arg(slotId);
+        raidArrays.append(pd);
+    }
+
+    QString result = MegaCLIHandler::createRaid(raidArrays);
+    updateDestinationDisksTable();
 }
 

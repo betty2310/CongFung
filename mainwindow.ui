@@ -221,6 +221,19 @@ QPushButton:checked {
          </item>
         </layout>
        </widget>
+       <widget class="QPushButton" name="createImageTaskBtn">
+        <property name="geometry">
+         <rect>
+          <x>795</x>
+          <y>570</y>
+          <width>161</width>
+          <height>25</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Create task</string>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="cloneDiskPage">
        <widget class="QLabel" name="label_2">

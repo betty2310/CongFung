@@ -14,6 +14,8 @@ class MegaCLIHandler : public QObject
 public:
     explicit MegaCLIHandler(QObject *parent = nullptr);
     static QList<MegaDisk> getDisks();
+    static QString createRaid(const QList<QString> &diskParis);
+    static void removeAllRaids();
 
 signals:
 

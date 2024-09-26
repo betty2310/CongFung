@@ -53,6 +53,8 @@ private slots:
 
     void on_sourceDiskTableReloadBtn_clicked();
 
+    void on_createImageTaskBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     bool isRootUser;

@@ -10,6 +10,7 @@ struct MegaDisk {
     QString rawSize;
     QString deviceSpeed;
     QString inquiryData;
+    QString raidState;
 };
 
 #endif // MEGADISK_H
