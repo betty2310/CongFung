@@ -26,6 +26,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         settingdialog.h settingdialog.cpp settingdialog.ui
         tools/blocksinfo.h tools/blocksinfo.cpp
         worker.h worker.cpp
+        tools/clicommand.h tools/clicommand.cpp
+        structs/megadisk.h
+        tools/megaclihandler.h tools/megaclihandler.cpp
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET navis-disk-reader APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

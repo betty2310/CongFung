@@ -128,7 +128,7 @@ QPushButton:checked {
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <widget class="QLabel" name="label_4">
@@ -156,19 +156,6 @@ QPushButton:checked {
        </widget>
       </widget>
       <widget class="QWidget" name="forensicImagePage">
-       <widget class="QLabel" name="label">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>311</width>
-          <height>30</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Select a disk to create forensic image</string>
-        </property>
-       </widget>
        <widget class="QTableWidget" name="sourceDiskTable">
         <property name="geometry">
          <rect>
@@ -177,6 +164,9 @@ QPushButton:checked {
           <width>991</width>
           <height>192</height>
          </rect>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
         </property>
        </widget>
        <widget class="QLabel" name="label_3">
@@ -201,6 +191,35 @@ QPushButton:checked {
           <height>201</height>
          </rect>
         </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+        </property>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>337</width>
+          <height>27</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Select a disk to create forensic image</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sourceDiskTableReloadBtn">
+           <property name="text">
+            <string>reload</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="cloneDiskPage">
@@ -228,7 +247,7 @@ QPushButton:checked {
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="reloadWipeDiskButton">
           <property name="text">
            <string>Reload</string>
           </property>

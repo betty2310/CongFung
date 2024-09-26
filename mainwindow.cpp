@@ -31,8 +31,17 @@ void MainWindow::setupDashboardPage() {
 }
 
 void MainWindow::setupCreateForensicImagePage() {
-    ui->sourceDiskTable->setColumnCount(5);
-    ui->sourceDiskTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type", "Tran"});
+    ui->sourceDiskTable->setColumnCount(4);
+    ui->sourceDiskTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type"});
+
+    ui->destinationsDiskTable->setColumnCount(6);
+    ui->destinationsDiskTable->setHorizontalHeaderLabels({"Id", "Slot number", "Enclosure ID", "Size", "Speed", "Name"});
+
+    updateSourceDiskTable();
+    updateDestinationDisksTable();
+}
+
+void MainWindow::updateSourceDiskTable() {
     QList<Block> blocks = blkInfo->getBlocksInfo();
 
     int displayRows = blocks.size();
@@ -65,17 +74,32 @@ void MainWindow::setupCreateForensicImagePage() {
         ui->sourceDiskTable->setItem(i, 1, new QTableWidgetItem(dp.path));
         ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(dp.size));
         ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
-        ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(dp.tran));
     }
+
+}
+
+
+void MainWindow::updateDestinationDisksTable() {
+    QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
+
+    ui->destinationsDiskTable->setRowCount(megaDisks.count());
+
+    for(int i = 0; i < megaDisks.count(); ++i) {
+        ui->destinationsDiskTable->setItem(i, 0, new QTableWidgetItem(QString::number(megaDisks[i].deviceId)));
+        ui->destinationsDiskTable->setItem(i, 1, new QTableWidgetItem(QString::number(megaDisks[i].slotNumber)));
+        ui->destinationsDiskTable->setItem(i, 2, new QTableWidgetItem(QString::number(megaDisks[i].enclosureDeviceId)));
+        ui->destinationsDiskTable->setItem(i, 3, new QTableWidgetItem(megaDisks[i].rawSize));
+        ui->destinationsDiskTable->setItem(i, 4, new QTableWidgetItem(megaDisks[i].deviceSpeed));
+        ui->destinationsDiskTable->setItem(i, 5, new QTableWidgetItem(megaDisks[i].inquiryData));
+    }
+
+    ui->destinationsDiskTable->setColumnWidth(5, 400);
 
 }
 
 void MainWindow::updateDashboardTable()
 {
-    // // For now, we'll just add a dummy task ID
-    // int rowCount = ui->dashboardTable->rowCount();
-    // ui->dashboardTable->insertRow(rowCount);
-    // ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(QString("Task %1").arg(rowCount + 1)));
+
 }
 
 void MainWindow::setupWipePage() {
@@ -252,5 +276,11 @@ void MainWindow::onStopTaskClicked(const QString &taskId, Worker *worker, QThrea
 void MainWindow::on_pushButton_clicked()
 {
     updateWipeTable();
+}
+
+
+void MainWindow::on_sourceDiskTableReloadBtn_clicked()
+{
+    updateSourceDiskTable();
 }
 

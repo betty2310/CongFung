@@ -47,15 +47,6 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
         }
     }
 
-    for(auto &blk : blocks) {
-        if(blk.parent != nullptr) {
-            qDebug() << blk.name << blk.parent->name;
-        } else {
-            qDebug() << blk.name;
-        }
-    }
-
-
     QProcess process;
     process.start("lsblk", QStringList() << "-no" << "NAME,TRAN");
     process.waitForFinished();

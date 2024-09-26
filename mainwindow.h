@@ -12,6 +12,7 @@
 
 #include "settingdialog.h"
 #include "tools/blocksinfo.h"
+#include "tools/megaclihandler.h"
 #include "worker.h"
 
 QT_BEGIN_NAMESPACE
@@ -50,6 +51,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_sourceDiskTableReloadBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     bool isRootUser;
@@ -61,5 +64,7 @@ private:
     void setupCreateForensicImagePage();
     void updateWipeTable();
     void updateDashboardTable();
+    void updateSourceDiskTable();
+    void updateDestinationDisksTable();
 };
 #endif // MAINWINDOW_H
