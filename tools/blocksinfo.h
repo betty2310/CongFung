@@ -11,8 +11,13 @@ struct Block
     QString path;
     QString size;
     QString tran;
+    QString fstype;
     bool isPartition;
     Block *parent;
+
+    bool operator==(const Block &other) const {
+        return path == other.path;
+    }
 };
 
 class BlocksInfo : public QObject
@@ -21,6 +26,7 @@ class BlocksInfo : public QObject
 public:
     explicit BlocksInfo(QObject *parent = nullptr);
     QList<Block> getBlocksInfo();
+    QList<Block> getDisks();
 
 signals:
 

@@ -5,6 +5,7 @@
 #include <QList>
 #include <QDebug>
 
+#include "blocksinfo.h"
 #include "../structs/megadisk.h"
 #include "clicommand.h"
 
@@ -14,7 +15,7 @@ class MegaCLIHandler : public QObject
 public:
     explicit MegaCLIHandler(QObject *parent = nullptr);
     static QList<MegaDisk> getDisks();
-    static QString createRaid(const QList<QString> &diskParis);
+    static QList<QString> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
     static void removeAllRaids();
 
 signals:

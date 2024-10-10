@@ -17,6 +17,22 @@ QList<Block> BlocksInfo::getBlocksInfo() {
     return parseLsblkOutput(output);
 }
 
+QList<Block> BlocksInfo::getDisks() {
+    QList<Block> blocks;
+
+    QProcess process;
+    process.start("lsblk", QStringList() << "-ndo" << "PATH");
+    process.waitForFinished();
+    QString output = process.readAllStandardOutput();
+    QStringList lines = output.split("\n", Qt::SkipEmptyParts);
+    for (const QString &line : lines) {
+        Block blk;
+        blk.path = line.trimmed();
+        blocks.append(blk);
+    }
+    return blocks;
+}
+
 QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
 {
     QList<Block> blocks;
@@ -47,10 +63,10 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
         }
     }
 
-    QProcess process;
-    process.start("lsblk", QStringList() << "-no" << "NAME,TRAN");
-    process.waitForFinished();
-    QString tranOutput = process.readAllStandardOutput();
+    QProcess tranProcess;
+    tranProcess.start("lsblk", QStringList() << "-no" << "NAME,TRAN");
+    tranProcess.waitForFinished();
+    QString tranOutput = tranProcess.readAllStandardOutput();
     QStringList tranLines = tranOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const QString &line : tranLines) {
@@ -64,6 +80,21 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
         }
     }
 
+    QProcess fstypeProcess;
+    fstypeProcess.start("lsblk", QStringList() << "-no" << "NAME,FSTYPE");
+    fstypeProcess.waitForFinished();
+    QString fstypeOutput = fstypeProcess.readAllStandardOutput();
+    QStringList fstypeLines = fstypeOutput.split("\n", Qt::SkipEmptyParts);
 
+    for (const QString &line : fstypeLines) {
+        QStringList parts = line.split(" ", Qt::SkipEmptyParts);
+        if (parts.size() >= 2) {
+            for(auto &blk : blocks) {
+                if(blk.name == parts[0]) {
+                    blk.fstype = parts[1];
+                }
+            }
+        }
+    }
     return blocks;
 }

@@ -14,6 +14,7 @@
 #include "tools/blocksinfo.h"
 #include "tools/megaclihandler.h"
 #include "worker.h"
+#include "structs/task.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -53,6 +54,8 @@ private slots:
 
     void on_sourceDiskTableReloadBtn_clicked();
 
+    void handleCreateImageTask(const Task & task);
+
     void on_createImageTaskBtn_clicked();
 
     void on_destinationDiskTableReloadBtn_clicked();
@@ -62,6 +65,7 @@ private:
     bool isRootUser;
     SettingDialog *settingDialog;
     BlocksInfo *blkInfo;
+    QList<Block> blocks;
 
     void setupWipePage();
     void setupDashboardPage();

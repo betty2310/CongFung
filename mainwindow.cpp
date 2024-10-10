@@ -42,23 +42,21 @@ void MainWindow::setupCreateForensicImagePage() {
 }
 
 void MainWindow::updateSourceDiskTable() {
-    QList<Block> blocks = blkInfo->getBlocksInfo();
+    blocks = blkInfo->getBlocksInfo();
 
     int displayRows = blocks.size();
     QList<Block> displayBlocks;
 
     for(int i = 0; i< blocks.size(); ++i) {
-
         if(blocks[i].tran == "nvme") { // mean os drive, can't modify
             displayRows--;
         } else if (blocks[i].tran == "") {  // logical disk: partition or raid?
-            if(blocks[i].parent == nullptr) {
+            if(blocks[i].parent == nullptr || blocks[i].parent->tran == "") {
                 displayRows--;
             } else {
                 displayBlocks.append(blocks[i]);
             }
         } else {
-            qDebug() << blocks[i].name;
             displayBlocks.append(blocks[i]);
         }
 
@@ -213,8 +211,6 @@ void MainWindow::on_runWipeBtn_clicked()
 
     QString taskId = QString("Wipe_%1").arg(QDateTime::currentDateTime().toString("yyymmmDDD__hhmmss"));
 
-    qDebug() << path;
-
     QThread *workerThread = new QThread();
     Worker *worker = new Worker(taskId, path);
     worker->moveToThread(workerThread);
@@ -322,8 +318,51 @@ void MainWindow::on_createImageTaskBtn_clicked()
         raidArrays.append(pd);
     }
 
-    QString result = MegaCLIHandler::createRaid(raidArrays);
+    QList<QString> result = MegaCLIHandler::createRaid(raidArrays, blkInfo);
+    if(result.count() == 0) return;
+    QList<QTableWidgetItem*> selectedSourceItems = ui->sourceDiskTable->selectedItems();
+
+    if(selectedItems.count() == 0) {
+        QMessageBox::warning(this, "Invalid selection", "Please select at least on disk");
+        return;
+    }
+    QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 1)->text();
+
+    Task task;
+    task.source = sourceImagePath;
+    task.destination = result.at(0);
+    task.command = DC3DD;
+    task.imageName = ui->imageNameTextBox->text();
+    task.hash = MD5;
+
+    handleCreateImageTask(task);
+
     updateDestinationDisksTable();
+}
+
+void MainWindow::handleCreateImageTask(const Task & task) {
+    QProcess process;
+    qDebug() << "Prepare disk" << task.destination;
+    process.start("prepare_disk", QStringList() << task.destination);
+    process.waitForFinished();
+    QString output = process.readAllStandardOutput();
+    QStringList lines = output.split("\n", Qt::SkipEmptyParts);
+
+    // Add task to dashboard
+    int rowCount = ui->dashboardTable->rowCount();
+    ui->dashboardTable->insertRow(rowCount);
+    ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(task.imageName));
+
+    // Add Stop button
+    QPushButton *stopButton = new QPushButton("Stop");
+    ui->dashboardTable->setCellWidget(rowCount, 2, stopButton);
+
+    // connect button to stop process
+
+    // connect(worker, &Worker::finished, this, &MainWindow::onWipeTaskFinished);
+    // connect(worker, &Worker::progressUpdate, this, &MainWindow::onWipeProgressUpdate);
+
+    // run dc3dd command, like: dc3dd if=/dev/sdc1 of=/mnt/md0/test hash=md5 log=test.md5 bufsz=16M
 }
 
 
