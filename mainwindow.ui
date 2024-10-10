@@ -128,7 +128,7 @@ QPushButton:checked {
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <widget class="QLabel" name="label_4">
@@ -181,14 +181,20 @@ QPushButton:checked {
         <property name="editTriggers">
          <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
         </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+        </property>
        </widget>
        <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>337</width>
-          <height>27</height>
+          <width>348</width>
+          <height>28</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -226,8 +232,8 @@ QPushButton:checked {
          <rect>
           <x>10</x>
           <y>270</y>
-          <width>245</width>
-          <height>27</height>
+          <width>255</width>
+          <height>28</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -293,6 +299,12 @@ QPushButton:checked {
           <property name="editTriggers">
            <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
           </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
          </widget>
         </item>
         <item>
@@ -321,7 +333,7 @@ QPushButton:checked {
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

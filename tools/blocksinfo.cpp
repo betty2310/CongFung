@@ -51,6 +51,7 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
                 continue;
             }
             blk.isPartition = parts[3] == "part" ? true: false;
+            blk.isBusy = false;
             blocks.append(blk);
         }
     }

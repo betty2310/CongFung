@@ -44,11 +44,11 @@ private slots:
 
     void on_runWipeBtn_clicked();
 
-    void onWipeTaskFinished(const QString &taskId, bool success);
+    void parseWipeOutput(QProcess *process, const QString &taskName);
 
-    void onWipeProgressUpdate(const QString &taskId, const QString &progress);
+    void onWipeTaskFinished(const QString &taskName, QString path, bool success);
 
-    void onStopTaskClicked(const QString &taskId, Worker *worker, QThread *workerThread);
+    void stopWipeProcess(QProcess *process, const QString &taskName, QString path);
 
     void on_pushButton_clicked();
 

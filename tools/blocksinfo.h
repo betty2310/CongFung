@@ -13,6 +13,7 @@ struct Block
     QString tran;
     QString fstype;
     bool isPartition;
+    bool isBusy;
     Block *parent;
 
     bool operator==(const Block &other) const {
