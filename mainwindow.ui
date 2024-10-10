@@ -169,19 +169,6 @@ QPushButton:checked {
          <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
         </property>
        </widget>
-       <widget class="QLabel" name="label_3">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>270</y>
-          <width>271</width>
-          <height>17</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Select destinations disk</string>
-        </property>
-       </widget>
        <widget class="QTableWidget" name="destinationsDiskTable">
         <property name="geometry">
          <rect>
@@ -233,6 +220,32 @@ QPushButton:checked {
         <property name="text">
          <string>Create task</string>
         </property>
+       </widget>
+       <widget class="QWidget" name="">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>270</y>
+          <width>245</width>
+          <height>27</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Select destinations disk</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="destinationDiskTableReloadBtn">
+           <property name="text">
+            <string>reload</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="cloneDiskPage">

@@ -326,3 +326,9 @@ void MainWindow::on_createImageTaskBtn_clicked()
     updateDestinationDisksTable();
 }
 
+
+void MainWindow::on_destinationDiskTableReloadBtn_clicked()
+{
+    updateDestinationDisksTable();
+}
+

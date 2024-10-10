@@ -49,7 +49,18 @@ QString MegaCLIHandler::createRaid(const QList<QString> &diskPairs) {
             args = args.sliced(0, args.length() - 1);
             command = "megacli -cfgldadd -r1 [" + args + "] -a0";
         } else {
+            // create raid 1 from odd disks
+            QString args;
+            for(int i = 0; i < diskPairs.count() - 1; ++i) {
+                args.append(diskPairs[i]);
+                args.append(",");
+            }
+            args = args.sliced(0, args.length() - 1);
+            QString createRaid1Command = "megacli -cfgldadd -r1 [" + args + "] -a0";
+            QString createRaid0Command = "megacli -cfgldadd -r0 [" + diskPairs.last() + "] -a0";
 
+            CliCommand::execute(createRaid1Command);
+            CliCommand::execute(createRaid0Command);
         }
     }
 
