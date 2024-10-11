@@ -56,7 +56,13 @@ private slots:
 
     void handleCreateImageTask(const Task & task);
 
+    void parseCreateImageTaskOutput(QProcess *process, const Task &task);
+
+    void stopCreateImageTaskProcess(QProcess *process, const Task &task);
+
     void on_createImageTaskBtn_clicked();
+
+    void onCreateImageTaskFinished(const Task &task, bool success);
 
     void on_destinationDiskTableReloadBtn_clicked();
 

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QList>
 #include <QDebug>
+#include <QThread>
 
 #include "blocksinfo.h"
 #include "../structs/megadisk.h"

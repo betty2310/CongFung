@@ -128,7 +128,7 @@ QPushButton:checked {
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="dashboardPage">
        <widget class="QLabel" name="label_4">
@@ -167,6 +167,12 @@ QPushButton:checked {
         </property>
         <property name="editTriggers">
          <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
         </property>
        </widget>
        <widget class="QTableWidget" name="destinationsDiskTable">
@@ -333,7 +339,7 @@ QPushButton:checked {
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

@@ -24,6 +24,7 @@ struct Task {
     QString destination;
     HashType hash;
     QString logPath;
+    QString mountedPath;
     T_CLI command;
 };
 
