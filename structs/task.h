@@ -15,16 +15,19 @@ enum HashType {
 
 enum T_CLI {
     DC3DD,
+    EWFACQUIRE,
     AFFIMAGER,
 };
 
 struct Task {
+    QString id;
     QString imageName;
     QString source;
     QString destination;
     HashType hash;
     QString logPath;
     QString mountedPath;
+    QString pdNumber;
     T_CLI command;
 };
 

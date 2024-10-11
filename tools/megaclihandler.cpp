@@ -1,5 +1,7 @@
 #include "megaclihandler.h"
 
+#include <qregularexpression.h>
+
 #include "blocksinfo.h"
 
 MegaCLIHandler::MegaCLIHandler(QObject *parent)
@@ -34,7 +36,9 @@ MegaDisk MegaCLIHandler::parseDiskInfo(const QStringList &lines) {
     return disk;
 }
 
-QList<QString> MegaCLIHandler::createRaid(const QList<QString> &diskPairs, BlocksInfo *blksInfo) {
+MegaCLIResponse MegaCLIHandler::createRaid(const QList<QString> &diskPairs, BlocksInfo *blksInfo) {
+    MegaCLIResponse response;
+
     bool oneDiskOnly = diskPairs.count() == 1;
     bool isEvenDisk = diskPairs.count() % 2 != 0;
     QList<Block> oldDisks = blksInfo->getDisks();
@@ -69,17 +73,26 @@ QList<QString> MegaCLIHandler::createRaid(const QList<QString> &diskPairs, Block
     qDebug() << "MegaCLIHandler::createRaid command: " << command;
     QString result = CliCommand::execute(command);
     qDebug() << "MegaCLIHandler::createRaid result: " << result;
+    QRegularExpression vdRegex(R"(VD\s+(\d+))");
+    QRegularExpressionMatch match = vdRegex.match(result);
+
+    if (match.hasMatch()) {
+        QString vdNumber = match.captured(1);  // Capture the number after "VD"
+        qDebug() << "Virtual Disk Number:" << vdNumber;
+        response.pdNumber = vdNumber;
+    } else {
+        qDebug() << "No match found";
+    }
     QThread::msleep(200);
-    QList<QString> output;
     QList<Block> newDisks = blksInfo->getDisks();
     for(auto const &disk : newDisks) {
         if(!oldDisks.contains(disk)) {
-            output.append(disk.path);
+            response.path.append(disk.path);
         }
     }
-    if(!output.empty()) {
-        qDebug() << "The associated disk of created raid array is: " << output.at(0);
+    if(!response.path.empty()) {
+        qDebug() << "The associated disk of created raid array is: " << response.path.at(0);
     }
-    return output;
+    return response;
 }
 

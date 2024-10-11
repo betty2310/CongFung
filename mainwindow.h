@@ -30,6 +30,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void prepareMega();
+
 private slots:
 
     void on_createForensicImageBtn_clicked();
@@ -54,13 +56,15 @@ private slots:
 
     void on_sourceDiskTableReloadBtn_clicked();
 
-    void handleCreateImageTask(const Task & task);
+    void handleCreateImageTask(Task &task);
 
     void parseCreateImageTaskOutput(QProcess *process, const Task &task);
 
     void stopCreateImageTaskProcess(QProcess *process, const Task &task);
 
     void on_createImageTaskBtn_clicked();
+
+    void cleanRaid(const Task &task);
 
     void onCreateImageTaskFinished(const Task &task, bool success);
 

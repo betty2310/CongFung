@@ -3,6 +3,11 @@
 
 #include <QString>
 
+struct MegaCLIResponse {
+    QList<QString> path;
+    QString pdNumber;
+};
+
 struct MegaDisk {
     int enclosureDeviceId;
     int slotNumber;
