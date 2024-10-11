@@ -205,8 +205,8 @@ QPushButton:checked {
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>337</width>
-          <height>27</height>
+          <width>510</width>
+          <height>71</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -229,8 +229,8 @@ QPushButton:checked {
        <widget class="QPushButton" name="createImageTaskBtn">
         <property name="geometry">
          <rect>
-          <x>795</x>
-          <y>570</y>
+          <x>830</x>
+          <y>670</y>
           <width>161</width>
           <height>25</height>
          </rect>
@@ -282,16 +282,16 @@ QPushButton:checked {
          </rect>
         </property>
         <property name="text">
-         <string>image format</string>
+         <string>Image format</string>
         </property>
        </widget>
-       <widget class="QWidget" name="">
+       <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
           <x>11</x>
           <y>271</y>
-          <width>245</width>
-          <height>27</height>
+          <width>360</width>
+          <height>71</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -308,6 +308,68 @@ QPushButton:checked {
             <string>reload</string>
            </property>
           </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="">
+        <property name="geometry">
+         <rect>
+          <x>310</x>
+          <y>530</y>
+          <width>331</width>
+          <height>171</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Case number</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="caseNumberTextBox"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Evidence number</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="evidenceNumberTextBox"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>Examiner</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="examinerTextBox"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>Description</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="descriptionTextBox"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>Notes</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLineEdit" name="notesTextBox"/>
          </item>
         </layout>
        </widget>
@@ -368,7 +430,7 @@ QPushButton:checked {
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>
