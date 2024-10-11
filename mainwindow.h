@@ -15,10 +15,12 @@
 #include "tools/megaclihandler.h"
 #include "worker.h"
 #include "structs/task.h"
+#include "tools/task_metadata.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
+namespace Ui
+{
+    class MainWindow;
 }
 QT_END_NAMESPACE
 
@@ -65,6 +67,8 @@ private slots:
     void on_createImageTaskBtn_clicked();
 
     void cleanRaid(const Task &task);
+
+    void writeTaskMetadata(const Task &task, bool success);
 
     void onCreateImageTaskFinished(const Task &task, bool success);
 

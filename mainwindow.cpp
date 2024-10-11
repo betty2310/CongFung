@@ -20,7 +20,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::prepareMega() {
+void MainWindow::prepareMega()
+{
     CliCommand::execute("prepare_mega");
 }
 
@@ -165,8 +166,10 @@ void MainWindow::updateWipeTable()
         ui->wipeTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
         ui->wipeTable->setItem(i, 4, new QTableWidgetItem(dp.tran));
 
-        if(dp.isBusy) {
-            for(int col = 0; col < ui->wipeTable->columnCount(); ++col) {
+        if (dp.isBusy)
+        {
+            for (int col = 0; col < ui->wipeTable->columnCount(); ++col)
+            {
                 QTableWidgetItem *item = ui->wipeTable->item(i, col);
                 item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
                 item->setForeground(QBrush(Qt::gray));
@@ -257,8 +260,7 @@ void MainWindow::on_runWipeBtn_clicked()
             this, [this, process, path, taskId](int exitCode, QProcess::ExitStatus exitStatus)
             {
         this->onWipeTaskFinished(taskId, path, exitCode == 0 && exitStatus == QProcess::NormalExit);
-        process->deleteLater();
-            });
+        process->deleteLater(); });
     qDebug() << "Run dc3dd wipe" << path;
     process->start("dc3dd", QStringList() << "wipe=" + path);
 
@@ -266,13 +268,14 @@ void MainWindow::on_runWipeBtn_clicked()
     qDebug() << "Enable read write on" << path;
 
     QMessageBox::information(this, "Wipe operation", "Create wipe operation successfully!");
-    for(auto & block : blocks) {
-        if(block.path == path) {
+    for (auto &block : blocks)
+    {
+        if (block.path == path)
+        {
             block.isBusy = true;
         }
     }
     updateWipeTable();
-
 }
 
 void MainWindow::parseWipeOutput(QProcess *process, const QString &taskName)
@@ -282,19 +285,24 @@ void MainWindow::parseWipeOutput(QProcess *process, const QString &taskName)
     QRegularExpression progressRegex(R"((\d+) bytes \( (\d+(?:\.\d+)?) (G|M) \) copied \( *(\d+)% *\), *(\d+) s, (\d+(?:\.\d+)?) (M|G)/s)");
     QRegularExpressionMatch match = progressRegex.match(output);
 
-    if (match.hasMatch()) {
-        QString progress = match.captured(4) + "%";  // Changed from 3 to 4
-        QString speed = match.captured(6) + " " + match.captured(7) + "/s";  // Changed from 5,6 to 6,7
+    if (match.hasMatch())
+    {
+        QString progress = match.captured(4) + "%";                         // Changed from 3 to 4
+        QString speed = match.captured(6) + " " + match.captured(7) + "/s"; // Changed from 5,6 to 6,7
 
         // Update dashboard
-        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i) {
-            if (ui->dashboardTable->item(i, 0)->text() == taskName) {
+        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i)
+        {
+            if (ui->dashboardTable->item(i, 0)->text() == taskName)
+            {
                 ui->dashboardTable->setItem(i, 2, new QTableWidgetItem(progress));
                 ui->dashboardTable->setItem(i, 3, new QTableWidgetItem(speed));
                 break;
             }
         }
-    } else {
+    }
+    else
+    {
         qDebug() << "No match found in output";
     }
 }
@@ -325,8 +333,10 @@ void MainWindow::stopWipeProcess(QProcess *process, const QString &taskName, con
             }
         }
 
-        for(auto & block : blocks) {
-            if(block.path == path) {
+        for (auto &block : blocks)
+        {
+            if (block.path == path)
+            {
                 block.isBusy = false;
             }
         }
@@ -346,8 +356,10 @@ void MainWindow::onWipeTaskFinished(const QString &taskName, const QString path,
             break;
         }
     }
-    for(auto & block : blocks) {
-        if(block.path == path) {
+    for (auto &block : blocks)
+    {
+        if (block.path == path)
+        {
             block.isBusy = false;
         }
     }
@@ -367,7 +379,8 @@ void MainWindow::on_sourceDiskTableReloadBtn_clicked()
 
 void MainWindow::on_createImageTaskBtn_clicked()
 {
-    if(ui->imageNameTextBox->text().isEmpty()) {
+    if (ui->imageNameTextBox->text().isEmpty())
+    {
         QMessageBox::critical(this, "Missing information", "Please enter image name!");
         return;
     }
@@ -415,7 +428,8 @@ void MainWindow::on_createImageTaskBtn_clicked()
     }
 
     MegaCLIResponse result = MegaCLIHandler::createRaid(raidArrays, blkInfo);
-    if (result.path.count() == 0) {
+    if (result.path.count() == 0)
+    {
         QMessageBox::critical(this, "Failed to create RAID", "Try again!");
         return;
     }
@@ -426,19 +440,20 @@ void MainWindow::on_createImageTaskBtn_clicked()
     task.command = DC3DD;
     task.imageName = ui->imageNameTextBox->text().trimmed();
     int i = ui->imageFormatComboBox->currentIndex();
-    switch (i) {
-        case 0:
-            task.command = DC3DD;
-            break;
-        case 1:
-            task.command = EWFACQUIRE;
-            break;
-        case 2:
-            task.command = AFFIMAGER;
-            break;
-        default:
-            task.command = DC3DD;
-            break;
+    switch (i)
+    {
+    case 0:
+        task.command = DC3DD;
+        break;
+    case 1:
+        task.command = EWFACQUIRE;
+        break;
+    case 2:
+        task.command = AFFIMAGER;
+        break;
+    default:
+        task.command = DC3DD;
+        break;
     }
 
     task.hash = MD5;
@@ -448,7 +463,8 @@ void MainWindow::on_createImageTaskBtn_clicked()
     handleCreateImageTask(task);
 }
 
-void MainWindow::cleanRaid(const Task & task) {
+void MainWindow::cleanRaid(const Task &task)
+{
     QProcess process;
     process.start("clean_create_image_task", QStringList() << task.mountedPath << task.pdNumber);
     process.waitForFinished();
@@ -494,23 +510,20 @@ void MainWindow::handleCreateImageTask(Task &task)
     // run dc3dd command, like: dc3dd if=/dev/sdc1 of=/mnt/md0/test hash=md5 log=test.md5 bufsz=16M
 
     auto *taskProcess = new QProcess(this);
-    connect(taskProcess, &QProcess::readyReadStandardError, this, [this, taskProcess, task]() {
-        this->parseCreateImageTaskOutput(taskProcess, task);
-    });
+    connect(taskProcess, &QProcess::readyReadStandardError, this, [this, taskProcess, task]()
+            { this->parseCreateImageTaskOutput(taskProcess, task); });
 
-
-    connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]() {
+    connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
+            {
         this->stopCreateImageTaskProcess(taskProcess, task);
-        cleanRaid(task);
-    });
+        cleanRaid(task); });
 
     connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
             {
         this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
         taskProcess->deleteLater();
-                cleanRaid(task);
-            });
+                cleanRaid(task); });
 
     qDebug() << "Create image task";
     QStringList arguments;
@@ -522,32 +535,39 @@ void MainWindow::handleCreateImageTask(Task &task)
 
     // Start the taskProcess with the command and its arguments
     taskProcess->start("dc3dd", arguments);
-    if (!taskProcess->waitForStarted()) {
+    if (!taskProcess->waitForStarted())
+    {
         qDebug() << "Failed to start process:" << taskProcess->errorString();
         return; // Exit the function if the process did not start
     }
     QMessageBox::information(this, "Create image task", "Oke!");
 }
 
-void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task) {
+void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
+{
     QString output = QString::fromUtf8(process->readAllStandardError()).trimmed();
     qDebug() << "DC3dd create image task output" << output;
     QRegularExpression progressRegex(R"((\d+) bytes \( (\d+(?:\.\d+)?) (G|M) \) copied \( *(\d+)% *\), *(\d+) s, (\d+(?:\.\d+)?) (M|G)/s)");
     QRegularExpressionMatch match = progressRegex.match(output);
 
-    if (match.hasMatch()) {
+    if (match.hasMatch())
+    {
         QString progress = match.captured(4) + "%";
         QString speed = match.captured(6) + " " + match.captured(7) + "/s";
 
         // Update dashboard
-        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i) {
-            if (ui->dashboardTable->item(i, 0)->text() == task.id) {
+        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i)
+        {
+            if (ui->dashboardTable->item(i, 0)->text() == task.id)
+            {
                 ui->dashboardTable->setItem(i, 3, new QTableWidgetItem(progress));
                 ui->dashboardTable->setItem(i, 4, new QTableWidgetItem(speed));
                 break;
             }
         }
-    } else {
+    }
+    else
+    {
         qDebug() << "No match found in output";
     }
 }
@@ -592,8 +612,39 @@ void MainWindow::onCreateImageTaskFinished(const Task &task, bool success)
             break;
         }
     }
+    writeTaskMetadata(task, success);
 }
 
+void MainWindow::writeTaskMetadata(const Task &task, bool success)
+{
+    task_metadata metadata;
+
+    // Set metadata fields
+    metadata.imagePath = QString("%1/%2.dd").arg(task.mountedPath).arg(task.imageName);
+    metadata.caseNumber = ui->caseNumberLineEdit->text();          // Assuming you have this field in your UI
+    metadata.description = ui->descriptionTextEdit->toPlainText(); // Assuming you have this field in your UI
+    metadata.examinerName = ui->examinerNameLineEdit->text();      // Assuming you have this field in your UI
+    metadata.evidenceName = ui->evidenceNameLineEdit->text();      // Assuming you have this field in your UI
+    metadata.note = ui->noteTextEdit->toPlainText();               // Assuming you have this field in your UI
+    metadata.fileFormat = ui->imageFormatComboBox->currentText();
+
+    // Get average speed and time from the dashboard
+    for (int i = 0; i < ui->dashboardTable->rowCount(); ++i)
+    {
+        if (ui->dashboardTable->item(i, 0)->text() == task.id)
+        {
+            metadata.averageSpeed = ui->dashboardTable->item(i, 4)->text();
+            metadata.time = ui->dashboardTable->item(i, 5)->text();
+            break;
+        }
+    }
+
+    // Write metadata to file
+    QString metadataPath = QString("%1/%2_metadata.txt").arg(task.mountedPath).arg(task.imageName);
+    metadata.writeTo(metadataPath);
+
+    qDebug() << "Task metadata written to:" << metadataPath;
+}
 
 void MainWindow::on_destinationDiskTableReloadBtn_clicked()
 {
