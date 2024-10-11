@@ -20,6 +20,8 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
         structs/task.h
+        tools/task_metadata.cpp
+        tools/task_metadata.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
