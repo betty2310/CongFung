@@ -585,38 +585,47 @@ void MainWindow::handleCreateImageTask(Task &task)
 void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
 {
     qDebug() << "[Task create image task]";
+    QString output;
+    QString progress;
+    QString speed;
+
     if(task.command == DC3DD) {
-        QString output = QString::fromUtf8(process->readAllStandardError()).trimmed();
+        output = QString::fromUtf8(process->readAllStandardError()).trimmed();
         QRegularExpression progressRegex(R"((\d+) bytes \( (\d+(?:\.\d+)?) (G|M) \) copied \( *(\d+)% *\), *(\d+) s, (\d+(?:\.\d+)?) (M|G)/s)");
         QRegularExpressionMatch match = progressRegex.match(output);
 
         if (match.hasMatch())
         {
-            QString progress = match.captured(4) + "%";
-            QString speed = match.captured(6) + " " + match.captured(7) + "/s";
-
-            // Update dashboard
-            for (int i = 0; i < ui->dashboardTable->rowCount(); ++i)
-            {
-                if (ui->dashboardTable->item(i, 0)->text() == task.id)
-                {
-                    ui->dashboardTable->setItem(i, 3, new QTableWidgetItem(progress));
-                    ui->dashboardTable->setItem(i, 4, new QTableWidgetItem(speed));
-                    break;
-                }
-            }
-        }
-        else
-        {
-            qDebug() << "No match found in output";
+            progress = match.captured(4) + "%";
+            speed = match.captured(6) + " " + match.captured(7) + "/s";
         }
     } else if(task.command == EWFACQUIRE) {
-        QString output = QString::fromUtf8(process->readAllStandardOutput()).trimmed();
-        qDebug() << "[EWFACQUIRE]: " << output;
+        output = QString::fromUtf8(process->readAllStandardOutput()).trimmed();
+        QRegularExpression progressRegex(R"(Status: at (\d+)%\..*completion in \d+ second\(s\) with (\d+) (MiB|GiB)/s)");
+        QRegularExpressionMatch match = progressRegex.match(output);
 
+        if (match.hasMatch())
+        {
+            progress = match.captured(1) + "%";
+            speed = match.captured(2) + " " + match.captured(3) + "/s";
+        }
     }
 
+    if (!progress.isEmpty() && !speed.isEmpty())
+    {
+        // Update dashboard
+        for (int i = 0; i < ui->dashboardTable->rowCount(); ++i)
+        {
+            if (ui->dashboardTable->item(i, 0)->text() == task.id)
+            {
+                ui->dashboardTable->setItem(i, 3, new QTableWidgetItem(progress));
+                ui->dashboardTable->setItem(i, 4, new QTableWidgetItem(speed));
+                break;
+            }
+        }
+    }
 
+    qDebug() << "[Output]: " << output;
 }
 
 void MainWindow::stopCreateImageTaskProcess(QProcess *process, const Task &task)
