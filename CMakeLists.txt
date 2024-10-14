@@ -34,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         tools/clicommand.h tools/clicommand.cpp
         structs/megadisk.h
         tools/megaclihandler.h tools/megaclihandler.cpp
+        taskresult.h taskresult.cpp taskresult.ui
 
     )
 # Define target properties for Android with Qt 6 as:

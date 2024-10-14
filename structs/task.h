@@ -29,6 +29,13 @@ struct Task {
     QString mountedPath;
     QString pdNumber;
     T_CLI command;
+
+    QString caseNumber;
+    QString description;
+    QString examiner;
+    QString evidence;
+    QString notes;
+
 };
 
 
