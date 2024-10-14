@@ -496,7 +496,8 @@ void MainWindow::handleCreateImageTask(Task &task)
     QString mountedPath = lines.last();
     qDebug() << mountedPath;
     task.mountedPath = mountedPath;
-    task.id = QString("createImageTask_%1").arg(task.imageName);
+    task.id = QString("createImageTask_%1_%2").arg(task.imageName).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+
 
     // Add task to dashboard
     int rowCount = ui->dashboardTable->rowCount();
@@ -601,7 +602,7 @@ void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
         }
     } else if(task.command == EWFACQUIRE) {
         output = QString::fromUtf8(process->readAllStandardOutput()).trimmed();
-        QRegularExpression progressRegex(R"(Status: at (\d+)%\..*completion in \d+ second\(s\) with (\d+) (MiB|GiB)/s)");
+        QRegularExpression progressRegex(R"(Status: at (\d+)%\.[\s\S]*?completion in \d+ second\(s\) with (\d+) (MiB|GiB)/s)");
         QRegularExpressionMatch match = progressRegex.match(output);
 
         if (match.hasMatch())
@@ -609,6 +610,7 @@ void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
             progress = match.captured(1) + "%";
             speed = match.captured(2) + " " + match.captured(3) + "/s";
         }
+        qDebug() <<"Output " << output << "Progress: " << progress << speed;
     }
 
     if (!progress.isEmpty() && !speed.isEmpty())
@@ -664,6 +666,7 @@ void MainWindow::onCreateImageTaskFinished(const Task &task, bool success)
         if (ui->dashboardTable->item(i, 0)->text() == task.id)
         {
             ui->dashboardTable->setItem(i, 6, new QTableWidgetItem(success ? "Completed" : "Failed"));
+            ui->dashboardTable->setItem(i, 3, new QTableWidgetItem("100%"));
             ui->dashboardTable->cellWidget(i, 7)->setEnabled(false);
             break;
         }
