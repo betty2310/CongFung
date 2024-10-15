@@ -4,7 +4,7 @@
 #include <QString>
 
 struct MegaCLIResponse {
-    QList<QString> path;
+    QString path = "";
     QString pdNumber;
 };
 

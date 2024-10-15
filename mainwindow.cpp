@@ -433,44 +433,48 @@ void MainWindow::on_createImageTaskBtn_clicked()
         raidArrays.append(pd);
     }
 
-    MegaCLIResponse result = MegaCLIHandler::createRaid(raidArrays, blkInfo);
-    if (result.path.count() == 0)
+    QList<MegaCLIResponse> result = MegaCLIHandler::createRaid(raidArrays, blkInfo);
+    if (result.isEmpty())
     {
         QMessageBox::critical(this, "Failed to create RAID", "Try again!");
         return;
     }
 
-    Task task;
-    task.source = sourceImagePath;
-    task.destination = result.path.at(0);
-    task.command = DC3DD;
-    task.imageName = ui->imageNameTextBox->text().trimmed();
-    int i = ui->imageFormatComboBox->currentIndex();
-    switch (i)
-    {
-    case 0:
+    QList<Task> tasks;
+    for(auto &res : result) {
+        Task task;
+        task.source = sourceImagePath;
+        task.destination = res.path;
         task.command = DC3DD;
-        break;
-    case 1:
-        task.command = EWFACQUIRE;
-        break;
-    case 2:
-        task.command = AFFIMAGER;
-        break;
-    default:
-        task.command = DC3DD;
-        break;
-    }
+        task.imageName = ui->imageNameTextBox->text().trimmed();
+        int i = ui->imageFormatComboBox->currentIndex();
+        switch (i)
+        {
+            case 0:
+                task.command = DC3DD;
+            break;
+            case 1:
+                task.command = EWFACQUIRE;
+            break;
+            case 2:
+                task.command = AFFIMAGER;
+            break;
+            default:
+                task.command = DC3DD;
+            break;
+        }
 
-    task.hash = MD5;
-    task.pdNumber = result.pdNumber;
-    task.description = "";
-    task.caseNumber = "";
-    task.examiner = "";
-    task.notes = "";
-    task.evidence = "";
-    updateDestinationDisksTable();
-    handleCreateImageTask(task);
+        task.hash = MD5;
+        task.pdNumber = res.pdNumber;
+        task.description = "";
+        task.caseNumber = "";
+        task.examiner = "";
+        task.notes = "";
+        task.evidence = "";
+        tasks.append(task);
+        updateDestinationDisksTable();
+    }
+    handleCreateImageTask(tasks);
 }
 
 void MainWindow::cleanRaid(const Task &task)
@@ -482,6 +486,132 @@ void MainWindow::cleanRaid(const Task &task)
     qDebug() << output;
     qDebug() << "Clean pd" << task.pdNumber << "\nUmount" << task.mountedPath;
     updateDestinationDisksTable();
+}
+
+void MainWindow::cleanRaid(const QList<Task> &tasks)
+{
+    for(auto &task : tasks) {
+        cleanRaid(task);
+    }
+}
+
+void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
+    if(tasks.count() == 1) {
+        handleCreateImageTask(tasks[0]);
+    } else if (tasks.count() == 2) {
+        for(auto &task : tasks) {
+            QProcess process;
+            qDebug() << "Prepare disk" << task.destination;
+            process.start("prepare_disk", QStringList() << task.destination);
+            process.waitForFinished();
+            const QString output = process.readAllStandardOutput();
+            qDebug() << output;
+            QStringList lines = output.split("\n", Qt::SkipEmptyParts);
+            QString mountedPath = lines.last();
+            qDebug() << mountedPath;
+            task.mountedPath = mountedPath;
+            task.id = QString("createImageTask_%1_%2").arg(task.imageName).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+        }
+
+
+        // Add task to dashboard
+        int rowCount = ui->dashboardTable->rowCount();
+        ui->dashboardTable->insertRow(rowCount);
+        ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(tasks[0].id));
+        ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(tasks[0].source));
+        QString destination = QString("%1/%2").arg(tasks[0].mountedPath).arg(tasks[0].imageName);
+        if(tasks[0].command == DC3DD) {
+            destination += ".dd";
+        } else if(tasks[0].command == EWFACQUIRE) {
+            destination += ".e01";
+        } else {
+            destination += ".aff4";
+        }
+        ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(destination));
+        ui->dashboardTable->setItem(rowCount, 6, new QTableWidgetItem("Running"));
+
+        tasks[0].caseNumber = ui->caseNumberTextBox->text().trimmed();
+        tasks[0].description = ui->descriptionTextBox->text().trimmed();
+        tasks[0].evidence = ui->evidenceNumberTextBox->text().trimmed();
+        tasks[0].notes = ui->notesTextBox->text().trimmed();
+        tasks[0].examiner = ui->examinerTextBox->text().trimmed();
+
+        // Add Stop button
+        QPushButton *stopButton = new QPushButton("Stop");
+        ui->dashboardTable->setCellWidget(rowCount, 7, stopButton);
+
+        // connect button to stop process
+
+        // connect(worker, &Worker::finished, this, &MainWindow::onWipeTaskFinished);
+        // connect(worker, &Worker::progressUpdate, this, &MainWindow::onWipeProgressUpdate);
+
+        // run dc3dd command, like: dc3dd if=/dev/sdc1 of=/mnt/md0/test hash=md5 log=test.md5 bufsz=16M
+
+        Task task = tasks[0];
+
+        auto *taskProcess = new QProcess(this);
+        connect(taskProcess, &QProcess::readyReadStandardError, this, [this, taskProcess, task]()
+                { this->parseCreateImageTaskOutput(taskProcess, task); });
+
+        connect(taskProcess, &QProcess::readyReadStandardOutput, this, [this, taskProcess, task]()
+            { this->parseCreateImageTaskOutput(taskProcess, task); });
+
+        connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task, tasks]()
+                {
+            this->stopCreateImageTaskProcess(taskProcess, task);
+            cleanRaid(tasks);
+                });
+
+        connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                this, [this, taskProcess, task, tasks](int exitCode, QProcess::ExitStatus exitStatus)
+                {
+            this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
+            taskProcess->deleteLater();
+                    cleanRaid(tasks);
+                });
+
+        qDebug() << "Create image task";
+        QStringList arguments;
+        if(task.command == DC3DD) {
+            arguments << QString("if=%1").arg(task.source)
+                      << QString("of=%1/%2.dd").arg(tasks[0].mountedPath).arg(task.imageName)
+                      << QString("of=%1/%2.dd").arg(tasks[1].mountedPath).arg(task.imageName)
+                      << "hash=md5"
+                      << QString("log=%1.md5").arg(task.imageName)
+                      << "bufsz=16M";
+            taskProcess->start("dc3dd", arguments);
+
+        } else if (task.command == EWFACQUIRE) {
+            arguments << task.source << "-t" << QString("%1/%2").arg(tasks[0].mountedPath).arg(task.imageName)
+                << "-2" << QString("%1/%2").arg(tasks[1].mountedPath).arg(task.imageName)
+                << "-C" << task.caseNumber
+                << "-D" << task.description
+                << "-e" << task.examiner
+                << "-E" << task.evidence
+                << "-N" << task.notes
+                << "-f" << "encase6"
+                << "-m" << "fixed" << "-M" << "physical"
+                << "-c"
+                << "deflate:best"
+                << "-S"<< "2G" << "-b" << "64" << "-g" <<"64" << "-r" <<"2" << "-u";
+            taskProcess->start("ewfacquire", arguments);
+        } else {
+            // TODO: affimager case
+            // aff4imager -i /dev/sda1 -o /tmp/test.aff4
+            arguments << "-i" << task.source << "-o" << QString("%1/%2.aff4").arg(task.mountedPath).arg(task.imageName);
+            taskProcess->start("aff4imager", arguments);
+        }
+
+        // Start the taskProcess with the command and its arguments
+        if (!taskProcess->waitForStarted())
+        {
+            qDebug() << "Failed to start process:" << taskProcess->errorString();
+            return; // Exit the function if the process did not start
+        }
+        QMessageBox::information(this, "Create image task", "Oke!");
+    } else {
+        return;
+    }
 }
 
 void MainWindow::handleCreateImageTask(Task &task)
@@ -504,10 +634,22 @@ void MainWindow::handleCreateImageTask(Task &task)
     ui->dashboardTable->insertRow(rowCount);
     ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(task.id));
     ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(task.source));
-    ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(task.mountedPath));
-    ui->dashboardTable->setItem(rowCount, 3, new QTableWidgetItem("0%"));
-    ui->dashboardTable->setItem(rowCount, 4, new QTableWidgetItem("0 MB/"));
+    QString destination = QString("%1/%2").arg(task.mountedPath).arg(task.imageName);
+    if(task.command == DC3DD) {
+        destination += ".dd";
+    } else if(task.command == EWFACQUIRE) {
+        destination += ".e01";
+    } else {
+        destination += ".aff4";
+    }
+    ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(destination));
     ui->dashboardTable->setItem(rowCount, 6, new QTableWidgetItem("Running"));
+
+    task.caseNumber = ui->caseNumberTextBox->text().trimmed();
+    task.description = ui->descriptionTextBox->text().trimmed();
+    task.evidence = ui->evidenceNumberTextBox->text().trimmed();
+    task.notes = ui->notesTextBox->text().trimmed();
+    task.examiner = ui->examinerTextBox->text().trimmed();
 
     // Add Stop button
     QPushButton *stopButton = new QPushButton("Stop");
@@ -552,12 +694,6 @@ void MainWindow::handleCreateImageTask(Task &task)
         taskProcess->start("dc3dd", arguments);
 
     } else if (task.command == EWFACQUIRE) {
-        task.caseNumber = ui->caseNumberTextBox->text().trimmed();
-        task.description = ui->descriptionTextBox->text().trimmed();
-        task.evidence = ui->evidenceNumberTextBox->text().trimmed();
-        task.notes = ui->notesTextBox->text().trimmed();
-        task.examiner = ui->examinerTextBox->text().trimmed();
-
         arguments << task.source << "-t" << QString("%1/%2").arg(task.mountedPath).arg(task.imageName)
             << "-C" << task.caseNumber
             << "-D" << task.description
@@ -572,6 +708,9 @@ void MainWindow::handleCreateImageTask(Task &task)
         taskProcess->start("ewfacquire", arguments);
     } else {
         // TODO: affimager case
+        // aff4imager -i /dev/sda1 -o /tmp/test.aff4
+        arguments << "-i" << task.source << "-o" << QString("%1/%2.aff4").arg(task.mountedPath).arg(task.imageName);
+        taskProcess->start("aff4imager", arguments);
     }
 
     // Start the taskProcess with the command and its arguments

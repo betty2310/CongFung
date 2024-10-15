@@ -36,16 +36,14 @@ MegaDisk MegaCLIHandler::parseDiskInfo(const QStringList &lines) {
     return disk;
 }
 
-MegaCLIResponse MegaCLIHandler::createRaid(const QList<QString> &diskPairs, BlocksInfo *blksInfo) {
-    MegaCLIResponse response;
+QList<MegaCLIResponse> MegaCLIHandler::createRaid(const QList<QString> &diskPairs, BlocksInfo *blksInfo) {
+    QList<MegaCLIResponse> responses;
+    const bool oneDiskOnly = diskPairs.count() == 1;
+    const bool isEvenDisk = diskPairs.count() % 2 != 0;
 
-    bool oneDiskOnly = diskPairs.count() == 1;
-    bool isEvenDisk = diskPairs.count() % 2 != 0;
-    QList<Block> oldDisks = blksInfo->getDisks();
-
-    QString command;
     if(oneDiskOnly) {
-       command = "megacli -cfgldadd -r0 [" + diskPairs[0] + "] -a0";
+        MegaCLIResponse response = createRaid(diskPairs[0], "0", blksInfo);
+        responses.append(response);
     } else {
         if(!isEvenDisk) {
             QString args;
@@ -54,7 +52,8 @@ MegaCLIResponse MegaCLIHandler::createRaid(const QList<QString> &diskPairs, Bloc
                 args.append(",");
             }
             args = args.sliced(0, args.length() - 1);
-            command = "megacli -cfgldadd -r1 [" + args + "] -a0";
+            MegaCLIResponse response = createRaid(args, "1", blksInfo);
+            responses.append(response);
         } else {
             // create raid 1 from odd disks
             QString args;
@@ -63,16 +62,24 @@ MegaCLIResponse MegaCLIHandler::createRaid(const QList<QString> &diskPairs, Bloc
                 args.append(",");
             }
             args = args.sliced(0, args.length() - 1);
-            QString createRaid1Command = "megacli -cfgldadd -r1 [" + args + "] -a0";
-            QString createRaid0Command = "megacli -cfgldadd -r0 [" + diskPairs.last() + "] -a0";
-
-            CliCommand::execute(createRaid1Command);
-            CliCommand::execute(createRaid0Command);
+            MegaCLIResponse response1 = createRaid(args, "1", blksInfo);
+            MegaCLIResponse response2 = createRaid(diskPairs.last(), "0", blksInfo);
+            responses.append(response1);
+            responses.append(response2);
         }
     }
-    qDebug() << "MegaCLIHandler::createRaid command: " << command;
+    return responses;
+}
+
+MegaCLIResponse MegaCLIHandler::createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo) {
+    QList<Block> oldDisks = blksInfo->getDisks();
+
+    MegaCLIResponse response;
+    QString command = QString("megacli -cfgldadd -r%1 [%2] -a0").arg(raidLevel).arg(raidArray);
+
+    qDebug() << "[MegaCLIHandler::createRaid command] " << command;
     QString result = CliCommand::execute(command);
-    qDebug() << "MegaCLIHandler::createRaid result: " << result;
+    qDebug() << "[MegaCLIHandler::createRaid result] " << result;
     QRegularExpression vdRegex(R"(VD\s+(\d+))");
     QRegularExpressionMatch match = vdRegex.match(result);
 
@@ -87,11 +94,11 @@ MegaCLIResponse MegaCLIHandler::createRaid(const QList<QString> &diskPairs, Bloc
     QList<Block> newDisks = blksInfo->getDisks();
     for(auto const &disk : newDisks) {
         if(!oldDisks.contains(disk)) {
-            response.path.append(disk.path);
+            response.path = disk.path;
         }
     }
-    if(!response.path.empty()) {
-        qDebug() << "The associated disk of created raid array is: " << response.path.at(0);
+    if(response.path != "") {
+        qDebug() << "The associated disk of created raid array is: " << response.path;
     }
     return response;
 }

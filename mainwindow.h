@@ -68,6 +68,10 @@ private slots:
 
     void cleanRaid(const Task &task);
 
+    void cleanRaid(const QList<Task> &tasks);
+
+    void handleCreateImageTask(QList<Task> &tasks);
+
     void writeTaskMetadata(const Task &task, bool success);
 
     void onCreateImageTaskFinished(const Task &task, bool success);
