@@ -53,20 +53,17 @@ void MainWindow::updateSourceDiskTable()
 {
     blocks = blkInfo->getBlocksInfo();
 
-    int displayRows = blocks.size();
     QList<Block> displayBlocks;
 
     for (int i = 0; i < blocks.size(); ++i)
     {
         if (blocks[i].tran == "nvme")
         { // mean os drive, can't modify
-            displayRows--;
         }
         else if (blocks[i].tran == "")
         { // logical disk: partition or raid?
             if (blocks[i].parent == nullptr || blocks[i].parent->tran == "")
             {
-                displayRows--;
             }
             else
             {
@@ -79,18 +76,44 @@ void MainWindow::updateSourceDiskTable()
         }
     }
 
-    ui->sourceDiskTable->setRowCount(displayRows);
+
+
+    QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
+
+    int displayRows = megaDisks.size();
+    QList<MegaDisk> displayMegaDisks;
+
+    for (int i = 0; i < megaDisks.size(); ++i)
+    {
+        if (megaDisks[i].raidState == "Online" || (megaDisks[i].slotNumber >= 4))
+        {
+            displayRows--;
+        }
+        else
+        {
+            displayMegaDisks.append(megaDisks[i]);
+        }
+    }
+
+    ui->sourceDiskTable->setRowCount(displayBlocks.size() + displayMegaDisks.count());
 
     for (int i = 0; i < displayBlocks.size(); ++i)
     {
-
         const Block &dp = displayBlocks[i];
-
         ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(dp.name));
         ui->sourceDiskTable->setItem(i, 1, new QTableWidgetItem(dp.path));
         ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(dp.size));
         ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
     }
+
+    for (int i = displayBlocks.size(); i < displayBlocks.size() + displayMegaDisks.count(); ++i)
+    {
+        ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].inquiryData));
+        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].rawSize));
+        // ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(displayMegaDisks[i].deviceSpeed));
+    }
+
+    ui->sourceDiskTable->setColumnWidth(5, 400);
 }
 
 void MainWindow::updateDestinationDisksTable()
@@ -102,7 +125,7 @@ void MainWindow::updateDestinationDisksTable()
 
     for (int i = 0; i < megaDisks.size(); ++i)
     {
-        if (megaDisks[i].raidState == "Online")
+        if (megaDisks[i].raidState == "Online" || (megaDisks[i].slotNumber < 4))
         {
             displayRows--;
         }
