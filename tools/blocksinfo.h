@@ -1,25 +1,11 @@
 #ifndef BLOCKSINFO_H
 #define BLOCKSINFO_H
 
+#include "../structs/block.h"
+
 #include <QObject>
 #include <QList>
 #include <QString>
-
-struct Block
-{
-    QString name;
-    QString path;
-    QString size;
-    QString tran;
-    QString fstype;
-    bool isPartition;
-    bool isBusy;
-    Block *parent;
-
-    bool operator==(const Block &other) const {
-        return path == other.path;
-    }
-};
 
 class BlocksInfo : public QObject
 {

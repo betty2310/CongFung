@@ -6,8 +6,9 @@
 #include <QDebug>
 #include <QThread>
 
-#include "blocksinfo.h"
+#include "../structs/block.h"
 #include "../structs/megadisk.h"
+#include "blocksinfo.h"
 #include "clicommand.h"
 
 class MegaCLIHandler : public QObject

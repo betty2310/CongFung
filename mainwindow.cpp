@@ -254,10 +254,10 @@ void MainWindow::on_runWipeBtn_clicked()
     connect(process, &QProcess::readyReadStandardError, this, [this, process, taskId]()
             { this->parseWipeOutput(process, taskId); });
 
-    connect(process, &QProcess::readyReadStandardOutput, this, [this, process, taskId]() {
+    connect(process, &QProcess::readyReadStandardOutput, this, [this, process, taskId]()
+            {
         QString output = process->readAllStandardOutput();
-        qDebug() << output;
-    });
+        qDebug() << output; });
 
     connect(stopButton, &QPushButton::clicked, this, [this, process, taskId, path]()
             { this->stopWipeProcess(process, taskId, path); });
@@ -441,7 +441,8 @@ void MainWindow::on_createImageTaskBtn_clicked()
     }
 
     QList<Task> tasks;
-    for(auto &res : result) {
+    for (auto &res : result)
+    {
         Task task;
         task.source = sourceImagePath;
         task.destination = res.path;
@@ -450,17 +451,17 @@ void MainWindow::on_createImageTaskBtn_clicked()
         int i = ui->imageFormatComboBox->currentIndex();
         switch (i)
         {
-            case 0:
-                task.command = DC3DD;
+        case 0:
+            task.command = DC3DD;
             break;
-            case 1:
-                task.command = EWFACQUIRE;
+        case 1:
+            task.command = EWFACQUIRE;
             break;
-            case 2:
-                task.command = AFFIMAGER;
+        case 2:
+            task.command = AFFIMAGER;
             break;
-            default:
-                task.command = DC3DD;
+        default:
+            task.command = DC3DD;
             break;
         }
 
@@ -490,16 +491,22 @@ void MainWindow::cleanRaid(const Task &task)
 
 void MainWindow::cleanRaid(const QList<Task> &tasks)
 {
-    for(auto &task : tasks) {
+    for (auto &task : tasks)
+    {
         cleanRaid(task);
     }
 }
 
-void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
-    if(tasks.count() == 1) {
+void MainWindow::handleCreateImageTask(QList<Task> &tasks)
+{
+    if (tasks.count() == 1)
+    {
         handleCreateImageTask(tasks[0]);
-    } else if (tasks.count() == 2) {
-        for(auto &task : tasks) {
+    }
+    else if (tasks.count() == 2)
+    {
+        for (auto &task : tasks)
+        {
             QProcess process;
             qDebug() << "Prepare disk" << task.destination;
             process.start("prepare_disk", QStringList() << task.destination);
@@ -513,18 +520,22 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
             task.id = QString("createImageTask_%1_%2").arg(task.imageName).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
         }
 
-
         // Add task to dashboard
         int rowCount = ui->dashboardTable->rowCount();
         ui->dashboardTable->insertRow(rowCount);
         ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(tasks[0].id));
         ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(tasks[0].source));
         QString destination = QString("%1/%2").arg(tasks[0].mountedPath).arg(tasks[0].imageName);
-        if(tasks[0].command == DC3DD) {
+        if (tasks[0].command == DC3DD)
+        {
             destination += ".dd";
-        } else if(tasks[0].command == EWFACQUIRE) {
+        }
+        else if (tasks[0].command == EWFACQUIRE)
+        {
             destination += ".e01";
-        } else {
+        }
+        else
+        {
             destination += ".aff4";
         }
         ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(destination));
@@ -554,25 +565,24 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
                 { this->parseCreateImageTaskOutput(taskProcess, task); });
 
         connect(taskProcess, &QProcess::readyReadStandardOutput, this, [this, taskProcess, task]()
-            { this->parseCreateImageTaskOutput(taskProcess, task); });
+                { this->parseCreateImageTaskOutput(taskProcess, task); });
 
         connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task, tasks]()
                 {
             this->stopCreateImageTaskProcess(taskProcess, task);
-            cleanRaid(tasks);
-                });
+            cleanRaid(tasks); });
 
         connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, [this, taskProcess, task, tasks](int exitCode, QProcess::ExitStatus exitStatus)
                 {
             this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
             taskProcess->deleteLater();
-                    cleanRaid(tasks);
-                });
+                    cleanRaid(tasks); });
 
         qDebug() << "Create image task";
         QStringList arguments;
-        if(task.command == DC3DD) {
+        if (task.command == DC3DD)
+        {
             arguments << QString("if=%1").arg(task.source)
                       << QString("of=%1/%2.dd").arg(tasks[0].mountedPath).arg(task.imageName)
                       << QString("of=%1/%2.dd").arg(tasks[1].mountedPath).arg(task.imageName)
@@ -580,22 +590,25 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
                       << QString("log=%1.md5").arg(task.imageName)
                       << "bufsz=16M";
             taskProcess->start("dc3dd", arguments);
-
-        } else if (task.command == EWFACQUIRE) {
+        }
+        else if (task.command == EWFACQUIRE)
+        {
             arguments << task.source << "-t" << QString("%1/%2").arg(tasks[0].mountedPath).arg(task.imageName)
-                << "-2" << QString("%1/%2").arg(tasks[1].mountedPath).arg(task.imageName)
-                << "-C" << task.caseNumber
-                << "-D" << task.description
-                << "-e" << task.examiner
-                << "-E" << task.evidence
-                << "-N" << task.notes
-                << "-f" << "encase6"
-                << "-m" << "fixed" << "-M" << "physical"
-                << "-c"
-                << "deflate:best"
-                << "-S"<< "2G" << "-b" << "64" << "-g" <<"64" << "-r" <<"2" << "-u";
+                      << "-2" << QString("%1/%2").arg(tasks[1].mountedPath).arg(task.imageName)
+                      << "-C" << task.caseNumber
+                      << "-D" << task.description
+                      << "-e" << task.examiner
+                      << "-E" << task.evidence
+                      << "-N" << task.notes
+                      << "-f" << "encase6"
+                      << "-m" << "fixed" << "-M" << "physical"
+                      << "-c"
+                      << "deflate:best"
+                      << "-S" << "2G" << "-b" << "64" << "-g" << "64" << "-r" << "2" << "-u";
             taskProcess->start("ewfacquire", arguments);
-        } else {
+        }
+        else
+        {
             // TODO: affimager case
             // aff4imager -i /dev/sda1 -o /tmp/test.aff4
             arguments << "-i" << task.source << "-o" << QString("%1/%2.aff4").arg(task.mountedPath).arg(task.imageName);
@@ -609,7 +622,9 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks) {
             return; // Exit the function if the process did not start
         }
         QMessageBox::information(this, "Create image task", "Oke!");
-    } else {
+    }
+    else
+    {
         return;
     }
 }
@@ -628,18 +643,22 @@ void MainWindow::handleCreateImageTask(Task &task)
     task.mountedPath = mountedPath;
     task.id = QString("createImageTask_%1_%2").arg(task.imageName).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
 
-
     // Add task to dashboard
     int rowCount = ui->dashboardTable->rowCount();
     ui->dashboardTable->insertRow(rowCount);
     ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(task.id));
     ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(task.source));
     QString destination = QString("%1/%2").arg(task.mountedPath).arg(task.imageName);
-    if(task.command == DC3DD) {
+    if (task.command == DC3DD)
+    {
         destination += ".dd";
-    } else if(task.command == EWFACQUIRE) {
+    }
+    else if (task.command == EWFACQUIRE)
+    {
         destination += ".e01";
-    } else {
+    }
+    else
+    {
         destination += ".aff4";
     }
     ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(destination));
@@ -667,46 +686,48 @@ void MainWindow::handleCreateImageTask(Task &task)
             { this->parseCreateImageTaskOutput(taskProcess, task); });
 
     connect(taskProcess, &QProcess::readyReadStandardOutput, this, [this, taskProcess, task]()
-        { this->parseCreateImageTaskOutput(taskProcess, task); });
+            { this->parseCreateImageTaskOutput(taskProcess, task); });
 
     connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
             {
         this->stopCreateImageTaskProcess(taskProcess, task);
-        cleanRaid(task);
-            });
+        cleanRaid(task); });
 
     connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
             {
         this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
         taskProcess->deleteLater();
-                cleanRaid(task);
-            });
+                cleanRaid(task); });
 
     qDebug() << "Create image task";
     QStringList arguments;
-    if(task.command == DC3DD) {
+    if (task.command == DC3DD)
+    {
         arguments << QString("if=%1").arg(task.source)
                   << QString("of=%1/%2.dd").arg(mountedPath).arg(task.imageName)
                   << "hash=md5"
                   << QString("log=%1.md5").arg(task.imageName)
                   << "bufsz=16M";
         taskProcess->start("dc3dd", arguments);
-
-    } else if (task.command == EWFACQUIRE) {
+    }
+    else if (task.command == EWFACQUIRE)
+    {
         arguments << task.source << "-t" << QString("%1/%2").arg(task.mountedPath).arg(task.imageName)
-            << "-C" << task.caseNumber
-            << "-D" << task.description
-            << "-e" << task.examiner
-            << "-E" << task.evidence
-            << "-N" << task.notes
-            << "-f" << "encase6"
-            << "-m" << "fixed" << "-M" << "physical"
-            << "-c"
-            << "deflate:best"
-            << "-S"<< "2G" << "-b" << "64" << "-g" <<"64" << "-r" <<"2" << "-u";
+                  << "-C" << task.caseNumber
+                  << "-D" << task.description
+                  << "-e" << task.examiner
+                  << "-E" << task.evidence
+                  << "-N" << task.notes
+                  << "-f" << "encase6"
+                  << "-m" << "fixed" << "-M" << "physical"
+                  << "-c"
+                  << "deflate:best"
+                  << "-S" << "2G" << "-b" << "64" << "-g" << "64" << "-r" << "2" << "-u";
         taskProcess->start("ewfacquire", arguments);
-    } else {
+    }
+    else
+    {
         // TODO: affimager case
         // aff4imager -i /dev/sda1 -o /tmp/test.aff4
         arguments << "-i" << task.source << "-o" << QString("%1/%2.aff4").arg(task.mountedPath).arg(task.imageName);
@@ -729,7 +750,8 @@ void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
     QString progress;
     QString speed;
 
-    if(task.command == DC3DD) {
+    if (task.command == DC3DD)
+    {
         output = QString::fromUtf8(process->readAllStandardError()).trimmed();
         QRegularExpression progressRegex(R"((\d+) bytes \( (\d+(?:\.\d+)?) (G|M) \) copied \( *(\d+)% *\), *(\d+) s, (\d+(?:\.\d+)?) (M|G)/s)");
         QRegularExpressionMatch match = progressRegex.match(output);
@@ -739,7 +761,9 @@ void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
             progress = match.captured(4) + "%";
             speed = match.captured(6) + " " + match.captured(7) + "/s";
         }
-    } else if(task.command == EWFACQUIRE) {
+    }
+    else if (task.command == EWFACQUIRE)
+    {
         output = QString::fromUtf8(process->readAllStandardOutput()).trimmed();
         QRegularExpression progressRegex(R"(Status: at (\d+)%\.[\s\S]*?completion in \d+ second\(s\) with (\d+) (MiB|GiB)/s)");
         QRegularExpressionMatch match = progressRegex.match(output);
@@ -749,7 +773,7 @@ void MainWindow::parseCreateImageTaskOutput(QProcess *process, const Task &task)
             progress = match.captured(1) + "%";
             speed = match.captured(2) + " " + match.captured(3) + "/s";
         }
-        qDebug() <<"Output " << output << "Progress: " << progress << speed;
+        qDebug() << "Output " << output << "Progress: " << progress << speed;
     }
 
     if (!progress.isEmpty() && !speed.isEmpty())
