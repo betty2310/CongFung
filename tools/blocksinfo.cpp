@@ -97,5 +97,22 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
             }
         }
     }
+
+    QProcess modelProcess;
+    modelProcess.start("lsblk", QStringList() << "-no" << "NAME,MODEL");
+    modelProcess.waitForFinished();
+    QString modelString = modelProcess.readAllStandardOutput();
+    QStringList modelStringLines = modelString.split("\n", Qt::SkipEmptyParts);
+
+    for (const QString &line : modelStringLines) {
+        QStringList parts = line.split(" ", Qt::SkipEmptyParts);
+        if (parts.size() >= 2) {
+            for(auto &blk : blocks) {
+                if(blk.name == parts[0]) {
+                    blk.model = parts[1];
+                }
+            }
+        }
+    }
     return blocks;
 }

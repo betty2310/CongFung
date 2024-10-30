@@ -13,6 +13,7 @@ struct Block
     bool isPartition;
     bool isBusy;
     Block *parent;
+    QString model;
 
     bool operator==(const Block &other) const
     {

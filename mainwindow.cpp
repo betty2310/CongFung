@@ -36,8 +36,8 @@ void MainWindow::setupDashboardPage()
 
 void MainWindow::setupCreateForensicImagePage()
 {
-    ui->sourceDiskTable->setColumnCount(4);
-    ui->sourceDiskTable->setHorizontalHeaderLabels({"Name", "Path", "Size", "Type"});
+    ui->sourceDiskTable->setColumnCount(5);
+    ui->sourceDiskTable->setHorizontalHeaderLabels({"Name", "Identify", "Path", "Size", "Type"});
 
     ui->destinationsDiskTable->setColumnCount(6);
     ui->destinationsDiskTable->setHorizontalHeaderLabels({"Id", "Slot number", "Enclosure ID", "Size", "Speed", "Name"});
@@ -100,20 +100,21 @@ void MainWindow::updateSourceDiskTable()
     for (int i = 0; i < displayBlocks.size(); ++i)
     {
         const Block &dp = displayBlocks[i];
-        ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(dp.name));
-        ui->sourceDiskTable->setItem(i, 1, new QTableWidgetItem(dp.path));
-        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(dp.size));
-        ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
+        ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(dp.model));
+        ui->sourceDiskTable->setItem(i, 1, new QTableWidgetItem(dp.name));
+        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(dp.path));
+        ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(dp.size));
+        ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(dp.isPartition ? "Partition" : "Disk"));
     }
 
     for (int i = displayBlocks.size(); i < displayBlocks.size() + displayMegaDisks.count(); ++i)
     {
         ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].inquiryData));
-        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].rawSize));
+        ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].rawSize));
         // ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(displayMegaDisks[i].deviceSpeed));
     }
 
-    ui->sourceDiskTable->setColumnWidth(5, 400);
+    ui->sourceDiskTable->setColumnWidth(0, 400);
 }
 
 void MainWindow::updateDestinationDisksTable()
@@ -293,7 +294,6 @@ void MainWindow::on_runWipeBtn_clicked()
     qDebug() << "Run dc3dd wipe" << path;
     process->start("dc3dd", QStringList() << "wipe=" + path);
 
-    // TODO: enable rw blockdev
     qDebug() << "Enable read write on" << path;
 
     QMessageBox::information(this, "Wipe operation", "Create wipe operation successfully!");
@@ -446,6 +446,11 @@ void MainWindow::on_createImageTaskBtn_clicked()
         return;
     }
     QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 1)->text();
+    if(sourceImagePath.isEmpty()) { // source from megacli
+        // TODO: make jbod from this disk
+        QString sourceImageName = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->text();
+
+    }
 
     QList<QString> raidArrays;
     for (int i = 0; i < selectedRows.size(); ++i)
