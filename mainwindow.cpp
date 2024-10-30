@@ -109,9 +109,14 @@ void MainWindow::updateSourceDiskTable()
 
     for (int i = displayBlocks.size(); i < displayBlocks.size() + displayMegaDisks.count(); ++i)
     {
-        ui->sourceDiskTable->setItem(i, 0, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].inquiryData));
+        QTableWidgetItem *item = new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].inquiryData);
+        QString pd = QString("%1:%2").arg(displayMegaDisks[i - displayBlocks.size()].enclosureDeviceId).arg(displayMegaDisks[i - displayBlocks.size()].slotNumber);
+        item->setData(Qt::UserRole + 1, pd);
+        ui->sourceDiskTable->setItem(i, 0, item);
+        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(""));
+        ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(""));
         ui->sourceDiskTable->setItem(i, 3, new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].rawSize));
-        // ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem(displayMegaDisks[i].deviceSpeed));
+        ui->sourceDiskTable->setItem(i, 4, new QTableWidgetItem("Disk"));
     }
 
     ui->sourceDiskTable->setColumnWidth(0, 400);
@@ -445,11 +450,18 @@ void MainWindow::on_createImageTaskBtn_clicked()
         QMessageBox::warning(this, "Invalid selection", "Please select at least on disk");
         return;
     }
-    QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 1)->text();
-    if(sourceImagePath.isEmpty()) { // source from megacli
-        // TODO: make jbod from this disk
-        QString sourceImageName = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->text();
+    QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 2)->text();
 
+    if(sourceImagePath.isEmpty()) { // source from megacli
+        QString pd = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 1).toString();
+        QString jbodDiskPath = MegaCLIHandler::createJbod(pd, blkInfo);
+        if(jbodDiskPath.isEmpty()) {
+            QMessageBox::warning(this, "Operation failed!", "");
+            return;
+        }
+        ui->sourceDiskTable->setItem(selectedSourceItems[0]->row(), 2, new QTableWidgetItem(jbodDiskPath));
+
+        sourceImagePath = jbodDiskPath;
     }
 
     QList<QString> raidArrays;

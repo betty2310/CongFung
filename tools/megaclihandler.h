@@ -20,6 +20,8 @@ public:
     static QList<MegaCLIResponse> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
     static MegaCLIResponse createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo);
 
+    static QString createJbod(const QString &raidArray, BlocksInfo *blksInfo);
+
 signals:
 
 private:

@@ -105,11 +105,14 @@ QList<Block> BlocksInfo::parseLsblkOutput(const QString &output)
     QStringList modelStringLines = modelString.split("\n", Qt::SkipEmptyParts);
 
     for (const QString &line : modelStringLines) {
-        QStringList parts = line.split(" ", Qt::SkipEmptyParts);
-        if (parts.size() >= 2) {
+        int firstIndexSpace = line.indexOf(' ');
+        if(firstIndexSpace != -1) {
+            QString name = line.left(firstIndexSpace);
+            QString model = line.mid(firstIndexSpace + 1).trimmed();
             for(auto &blk : blocks) {
-                if(blk.name == parts[0]) {
-                    blk.model = parts[1];
+                if(blk.name == name) {
+                    blk.model = model;
+                    break;
                 }
             }
         }

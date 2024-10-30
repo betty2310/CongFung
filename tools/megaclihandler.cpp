@@ -103,3 +103,27 @@ MegaCLIResponse MegaCLIHandler::createRaid(const QString &raidArray, const QStri
     return response;
 }
 
+QString MegaCLIHandler::createJbod(const QString &raidArray, BlocksInfo *blksInfo) {
+    QList<Block> oldDisks = blksInfo->getDisks();
+
+    QString response;
+    QString command = QString("make_jbod %1").arg(raidArray);
+
+    qDebug() << "[MegaCLIHandler::createJBOD command] " << command;
+    QString result = CliCommand::execute(command);
+    qDebug() << "[MegaCLIHandler::createJBOD result] " << result;
+
+    QThread::msleep(200);
+    QList<Block> newDisks = blksInfo->getDisks();
+
+    for(auto const &disk : newDisks) {
+        if(!oldDisks.contains(disk)) {
+            response = disk.path;
+        }
+    }
+    if(response != "") {
+        qDebug() << "The associated path of this disk is: " << response;
+    }
+    return response;
+}
+
