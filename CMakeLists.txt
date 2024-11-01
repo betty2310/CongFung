@@ -36,6 +36,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         structs/block.h
         tools/megaclihandler.h tools/megaclihandler.cpp
         taskresult.h taskresult.cpp taskresult.ui
+        hiddenareadialog.h hiddenareadialog.cpp hiddenareadialog.ui
 
     )
 # Define target properties for Android with Qt 6 as:

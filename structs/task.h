@@ -24,6 +24,8 @@ struct Task {
     QString imageName;
     QString source;
     QString destination;
+    QString sourceModel;
+    QString destinationModel;
     HashType hash;
     QString logPath;
     QString mountedPath;
@@ -35,6 +37,10 @@ struct Task {
     QString examiner;
     QString evidence;
     QString notes;
+
+    Task(): id(""), imageName(""), source(""), destination(""), sourceModel(""), destinationModel(""), hash(MD5),
+            logPath(""), mountedPath(""), pdNumber(""), command(DC3DD), caseNumber(""), examiner(""), evidence(""),
+            notes("") {}
 
 };
 

@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "settingdialog.h"
+#include "hiddenareadialog.h"
 #include "tools/blocksinfo.h"
 #include "tools/megaclihandler.h"
 #include "worker.h"
@@ -82,6 +83,7 @@ private:
     Ui::MainWindow *ui;
     bool isRootUser;
     SettingDialog *settingDialog;
+    HiddenAreaDialog *hiddenAreaDialog;
     BlocksInfo *blkInfo;
     QList<Block> blocks;
 

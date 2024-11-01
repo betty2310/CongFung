@@ -2,7 +2,7 @@
 #include "./ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), blkInfo(new BlocksInfo(this))
+    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), hiddenAreaDialog(new HiddenAreaDialog(this)), blkInfo(new BlocksInfo(this))
 {
     ui->setupUi(this);
 
@@ -485,6 +485,11 @@ void MainWindow::on_createImageTaskBtn_clicked()
     {
         Task task;
         task.source = sourceImagePath;
+        task.sourceModel = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->text();
+        if(task.sourceModel.isEmpty()) {
+            task.sourceModel = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 2)->text();
+        }
+
         task.destination = res.path;
         task.command = DC3DD;
         task.imageName = ui->imageNameTextBox->text().trimmed();
@@ -515,7 +520,9 @@ void MainWindow::on_createImageTaskBtn_clicked()
         tasks.append(task);
         updateDestinationDisksTable();
     }
-    handleCreateImageTask(tasks);
+    hiddenAreaDialog = new HiddenAreaDialog(this, tasks.first().source);
+    hiddenAreaDialog->show();
+    // handleCreateImageTask(tasks);
 }
 
 void MainWindow::cleanRaid(const Task &task)
@@ -564,7 +571,7 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks)
         int rowCount = ui->dashboardTable->rowCount();
         ui->dashboardTable->insertRow(rowCount);
         ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(tasks[0].id));
-        ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(tasks[0].source));
+        ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(tasks[0].sourceModel));
         QString destination = QString("%1/%2").arg(tasks[0].mountedPath).arg(tasks[0].imageName);
         if (tasks[0].command == DC3DD)
         {
@@ -687,7 +694,7 @@ void MainWindow::handleCreateImageTask(Task &task)
     int rowCount = ui->dashboardTable->rowCount();
     ui->dashboardTable->insertRow(rowCount);
     ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(task.id));
-    ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(task.source));
+    ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(task.sourceModel));
     QString destination = QString("%1/%2").arg(task.mountedPath).arg(task.imageName);
     if (task.command == DC3DD)
     {
