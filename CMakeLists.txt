@@ -34,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         tools/clicommand.h tools/clicommand.cpp
         structs/megadisk.h
         structs/block.h
+        structs/hiddenAreas.h
         tools/megaclihandler.h tools/megaclihandler.cpp
         taskresult.h taskresult.cpp taskresult.ui
         hiddenareadialog.h hiddenareadialog.cpp hiddenareadialog.ui

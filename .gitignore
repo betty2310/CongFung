@@ -3,6 +3,7 @@
 #
 build/
 .cache/
+cmake-build-debug/
 
 *~
 *.autosave
@@ -74,4 +75,3 @@ CMakeLists.txt.user*
 # --------
 *.dll
 *.exe
-

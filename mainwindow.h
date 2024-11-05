@@ -59,8 +59,6 @@ private slots:
 
     void on_sourceDiskTableReloadBtn_clicked();
 
-    void handleCreateImageTask(Task &task);
-
     void parseCreateImageTaskOutput(QProcess *process, const Task &task);
 
     void stopCreateImageTaskProcess(QProcess *process, const Task &task);
@@ -69,9 +67,11 @@ private slots:
 
     void cleanRaid(const Task &task);
 
-    void cleanRaid(const QList<Task> &tasks);
+    void cleanRaid();
 
-    void handleCreateImageTask(QList<Task> &tasks);
+    void handleCreateImageTask();
+
+    void handleCreateImageTask(Task &task);
 
     void writeTaskMetadata(const Task &task, bool success);
 
@@ -86,6 +86,7 @@ private:
     HiddenAreaDialog *hiddenAreaDialog;
     BlocksInfo *blkInfo;
     QList<Block> blocks;
+    QList<Task> tasks;
 
     void setupWipePage();
     void setupDashboardPage();

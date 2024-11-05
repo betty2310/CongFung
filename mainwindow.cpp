@@ -76,8 +76,6 @@ void MainWindow::updateSourceDiskTable()
         }
     }
 
-
-
     QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
 
     int displayRows = megaDisks.size();
@@ -112,6 +110,7 @@ void MainWindow::updateSourceDiskTable()
         QTableWidgetItem *item = new QTableWidgetItem(displayMegaDisks[i - displayBlocks.size()].inquiryData);
         QString pd = QString("%1:%2").arg(displayMegaDisks[i - displayBlocks.size()].enclosureDeviceId).arg(displayMegaDisks[i - displayBlocks.size()].slotNumber);
         item->setData(Qt::UserRole + 1, pd);
+        item->setData(Qt::UserRole + 23, displayMegaDisks[i - displayBlocks.size()].raidState);
         ui->sourceDiskTable->setItem(i, 0, item);
         ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(""));
         ui->sourceDiskTable->setItem(i, 2, new QTableWidgetItem(""));
@@ -452,10 +451,18 @@ void MainWindow::on_createImageTaskBtn_clicked()
     }
     QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 2)->text();
 
-    if(sourceImagePath.isEmpty()) { // source from megacli
+    if (sourceImagePath.isEmpty())
+    { // source from megacli
         QString pd = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 1).toString();
+        QString raidState = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 23).toString();
+        if (raidState == "Unknown")
+        {
+            QMessageBox::critical(this, "Source disk fail", "Please re-plug the source disk!");
+            return;
+        }
         QString jbodDiskPath = MegaCLIHandler::createJbod(pd, blkInfo);
-        if(jbodDiskPath.isEmpty()) {
+        if (jbodDiskPath.isEmpty())
+        {
             QMessageBox::warning(this, "Operation failed!", "");
             return;
         }
@@ -480,13 +487,13 @@ void MainWindow::on_createImageTaskBtn_clicked()
         return;
     }
 
-    QList<Task> tasks;
     for (auto &res : result)
     {
         Task task;
         task.source = sourceImagePath;
         task.sourceModel = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->text();
-        if(task.sourceModel.isEmpty()) {
+        if (task.sourceModel.isEmpty())
+        {
             task.sourceModel = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 2)->text();
         }
 
@@ -521,8 +528,16 @@ void MainWindow::on_createImageTaskBtn_clicked()
         updateDestinationDisksTable();
     }
     hiddenAreaDialog = new HiddenAreaDialog(this, tasks.first().source);
-    hiddenAreaDialog->show();
-    // handleCreateImageTask(tasks);
+    connect(hiddenAreaDialog, &HiddenAreaDialog::dialogClosed, this, [this]()
+            { handleCreateImageTask(); });
+    if (hiddenAreaDialog->shouldShow)
+    {
+        hiddenAreaDialog->show();
+    }
+    else
+    {
+        handleCreateImageTask();
+    }
 }
 
 void MainWindow::cleanRaid(const Task &task)
@@ -536,7 +551,7 @@ void MainWindow::cleanRaid(const Task &task)
     updateDestinationDisksTable();
 }
 
-void MainWindow::cleanRaid(const QList<Task> &tasks)
+void MainWindow::cleanRaid()
 {
     for (auto &task : tasks)
     {
@@ -544,7 +559,7 @@ void MainWindow::cleanRaid(const QList<Task> &tasks)
     }
 }
 
-void MainWindow::handleCreateImageTask(QList<Task> &tasks)
+void MainWindow::handleCreateImageTask()
 {
     if (tasks.count() == 1)
     {
@@ -614,17 +629,17 @@ void MainWindow::handleCreateImageTask(QList<Task> &tasks)
         connect(taskProcess, &QProcess::readyReadStandardOutput, this, [this, taskProcess, task]()
                 { this->parseCreateImageTaskOutput(taskProcess, task); });
 
-        connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task, tasks]()
+        connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
                 {
             this->stopCreateImageTaskProcess(taskProcess, task);
-            cleanRaid(tasks); });
+            cleanRaid(); });
 
         connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-                this, [this, taskProcess, task, tasks](int exitCode, QProcess::ExitStatus exitStatus)
+                this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
                 {
             this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
             taskProcess->deleteLater();
-                    cleanRaid(tasks); });
+                    cleanRaid(); });
 
         qDebug() << "Create image task";
         QStringList arguments;
