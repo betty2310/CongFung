@@ -7,19 +7,22 @@
 
 #include <QString>
 
-enum HashType {
+enum HashType
+{
     MD5,
     SHA1,
     SHA256
 };
 
-enum T_CLI {
+enum T_CLI
+{
     DC3DD,
     EWFACQUIRE,
     AFFIMAGER,
 };
 
-struct Task {
+struct Task
+{
     QString id;
     QString imageName;
     QString source;
@@ -38,11 +41,14 @@ struct Task {
     QString evidence;
     QString notes;
 
-    Task(): id(""), imageName(""), source(""), destination(""), sourceModel(""), destinationModel(""), hash(MD5),
-            logPath(""), mountedPath(""), pdNumber(""), command(DC3DD), caseNumber(""), examiner(""), evidence(""),
-            notes("") {}
+    Task() : id(""), imageName(""), source(""), destination(""), sourceModel(""), destinationModel(""), hash(MD5),
+             logPath(""), mountedPath(""), pdNumber(""), command(DC3DD), caseNumber(""), examiner(""), evidence(""),
+             notes("") {}
 
+    bool operator==(const Task &other) const
+    {
+        return (this->source == other.source) && (this->destination == other.destination);
+    }
 };
 
-
-#endif //TASK_H
+#endif // TASK_H

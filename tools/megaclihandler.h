@@ -11,6 +11,16 @@
 #include "blocksinfo.h"
 #include "clicommand.h"
 
+// 252:4 -> VD0 -> /dev/sdb -> /dev/sdb1 -> /mnt/sdb1
+enum RaidArrayInfo
+{
+    PD,
+    VD,
+    BLOCK,
+    PARTITION,
+    MOUNTPOINT
+};
+
 class MegaCLIHandler : public QObject
 {
     Q_OBJECT
@@ -20,9 +30,9 @@ public:
     explicit MegaCLIHandler(QObject *parent = nullptr);
     QList<MegaDisk> getDisks();
     void parserRaidMountInfo();
-    QString findMountedPath(const QString &id);
-    static QList<MegaCLIResponse> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
-    static MegaCLIResponse createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo);
+    QString extractLDRaidInfo(const QString &id, RaidArrayInfo infoType);
+    QList<MegaCLIResponse> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
+    MegaCLIResponse createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo);
 
     static QString createJbod(const QString &raidArray, BlocksInfo *blksInfo);
 

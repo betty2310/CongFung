@@ -26,6 +26,14 @@ namespace Ui
 }
 QT_END_NAMESPACE
 
+struct SourceDiskInfo
+{
+    QString name;
+    QString path;
+    QString pd;
+    QString raidState;
+} typedef SourceDiskInfo;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -63,27 +71,15 @@ private slots:
 
     void on_sourceDiskTableReloadBtn_clicked();
 
+    QList<MegaDisk> seletectedRowsToMegadisks();
+
     void parseCreateImageTaskOutput(QProcess *process, const Task &task);
 
     void stopCreateImageTaskProcess(QProcess *process, const Task &task);
 
+    SourceDiskInfo getSourceDiskNameFromSourceTable();
+
     void on_createImageTaskBtn_clicked();
-
-    bool makeRaidArrayFromDestinationDicks(QList<int> selectedRows, QString sourceImagePath, QList<QTableWidgetItem *> selectedSourceItems);
-
-    void makeJbodFromSourceDisk(QList<QTableWidgetItem *> &selectedSourceItems, QString &sourceImagePath, bool &retFlag);
-
-    void cleanRaid(const Task &task);
-
-    void cleanRaid();
-
-    void handleCreateImageTask();
-
-    void handleCreateImageTask(Task &task);
-
-    void writeTaskMetadata(const Task &task, bool success);
-
-    void onCreateImageTaskFinished(const Task &task, bool success);
 
     void on_destinationDiskTableReloadBtn_clicked();
 
@@ -103,5 +99,22 @@ private:
     void updateDashboardTable();
     void updateSourceDiskTable();
     void updateDestinationDisksTable();
+    Task makeTask(SourceDiskInfo &sourceDisk, QString &destination, QString mountedPath, QString imageName, int command, QString pdNumber);
+
+    bool makeRaidArrayFromDestinationDicks(QList<MegaDisk> destinationDisks, SourceDiskInfo sourceDisk);
+
+    void makeJbodFromSourceDisk(SourceDiskInfo &info, bool &retFlag);
+
+    void cleanRaid(const Task &task);
+
+    void cleanRaid();
+
+    void handleCreateImageTask();
+
+    void handleCreateImageTask(Task &task);
+
+    void writeTaskMetadata(const Task &task, bool success);
+
+    void onCreateImageTaskFinished(const Task &task, bool success);
 };
 #endif // MAINWINDOW_H
