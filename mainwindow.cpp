@@ -2,7 +2,7 @@
 #include "./ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), hiddenAreaDialog(new HiddenAreaDialog(this)), blkInfo(new BlocksInfo(this))
+    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), hiddenAreaDialog(new HiddenAreaDialog(this)), blkInfo(new BlocksInfo(this)), megaCliHandler(new MegaCLIHandler(this))
 {
     ui->setupUi(this);
 
@@ -23,6 +23,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::prepareMega()
 {
+    // TODO: only make destination disk to good state
     CliCommand::execute("prepare_mega");
 }
 
@@ -76,14 +77,14 @@ void MainWindow::updateSourceDiskTable()
         }
     }
 
-    QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
+    QList<MegaDisk> megaDisks = megaCliHandler->disks;
 
     int displayRows = megaDisks.size();
     QList<MegaDisk> displayMegaDisks;
 
     for (int i = 0; i < megaDisks.size(); ++i)
     {
-        if (megaDisks[i].raidState == "Online" || (megaDisks[i].slotNumber >= 4))
+        if (megaDisks[i].slotNumber >= 4)
         {
             displayRows--;
         }
@@ -123,14 +124,13 @@ void MainWindow::updateSourceDiskTable()
 
 void MainWindow::updateDestinationDisksTable()
 {
-    QList<MegaDisk> megaDisks = MegaCLIHandler::getDisks();
-
-    int displayRows = megaDisks.size();
+    QList<MegaDisk> megaDisks = megaCliHandler->disks;
+    int displayRows = megaCliHandler->disks.size();
     QList<MegaDisk> displayMegaDisks;
 
     for (int i = 0; i < megaDisks.size(); ++i)
     {
-        if (megaDisks[i].raidState == "Online" || (megaDisks[i].slotNumber < 4))
+        if (megaDisks[i].slotNumber < 4)
         {
             displayRows--;
         }
@@ -418,59 +418,59 @@ void MainWindow::on_createImageTaskBtn_clicked()
         return;
     }
 
-    QList<QTableWidgetItem *> selectedItems = ui->destinationsDiskTable->selectedItems();
-    QList<int> selectedRows;
+    QList<QTableWidgetItem *> selectedDestinationDisks = ui->destinationsDiskTable->selectedItems();
+    QList<int> selectedDestinationDiskRows;
 
-    for (const auto &item : selectedItems)
+    for (const auto &item : selectedDestinationDisks)
     {
-        if (!selectedRows.contains(item->row()))
+        if (!selectedDestinationDiskRows.contains(item->row()))
         {
-            selectedRows.append(item->row());
+            selectedDestinationDiskRows.append(item->row());
         }
     }
 
-    if (selectedRows.count() == 0)
+    if (selectedDestinationDiskRows.count() == 0)
     {
         QMessageBox::warning(this, "Invalid selection", "Please select at least on disk");
         return;
     }
 
     QList<QTableWidgetItem *> selectedSourceItems = ui->sourceDiskTable->selectedItems();
-    QList<int> selectedSourceTableRows;
-    for (const auto &item : selectedSourceItems)
-    {
-        if (!selectedSourceTableRows.contains(item->row()))
-        {
-            selectedSourceTableRows.append(item->row());
-        }
-    }
-    if (selectedSourceTableRows.count() == 0)
+    if (selectedSourceItems.count() == 0)
     {
         QMessageBox::warning(this, "Invalid selection", "Please select at least on disk");
         return;
     }
     QString sourceImagePath = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 2)->text();
 
-    if (sourceImagePath.isEmpty())
-    { // source from megacli
-        QString pd = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 1).toString();
-        QString raidState = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 23).toString();
-        if (raidState == "Unknown")
-        {
-            QMessageBox::critical(this, "Source disk fail", "Please re-plug the source disk!");
+    if (sourceImagePath.isEmpty()) // source from megacli
+    {
+        bool retFlag;
+        makeJbodFromSourceDisk(selectedSourceItems, sourceImagePath, retFlag);
+        if (retFlag)
             return;
-        }
-        QString jbodDiskPath = MegaCLIHandler::createJbod(pd, blkInfo);
-        if (jbodDiskPath.isEmpty())
-        {
-            QMessageBox::warning(this, "Operation failed!", "");
-            return;
-        }
-        ui->sourceDiskTable->setItem(selectedSourceItems[0]->row(), 2, new QTableWidgetItem(jbodDiskPath));
-
-        sourceImagePath = jbodDiskPath;
     }
 
+    hiddenAreaDialog = new HiddenAreaDialog(this, sourceImagePath);
+    connect(hiddenAreaDialog, &HiddenAreaDialog::handledDiskArea, this, [this, selectedDestinationDiskRows, sourceImagePath, selectedSourceItems]()
+            {
+                bool isOk = makeRaidArrayFromDestinationDicks(selectedDestinationDiskRows, sourceImagePath, selectedSourceItems);
+                this->hiddenAreaDialog->setProgressBar(50);
+                if (!isOk)
+                {
+                    return;
+                }
+                handleCreateImageTask(); 
+                this->hiddenAreaDialog->setProgressBar(100);
+                this->hiddenAreaDialog->close(); });
+    hiddenAreaDialog->show();
+}
+
+bool MainWindow::makeRaidArrayFromDestinationDicks(QList<int> selectedRows, QString sourceImagePath, QList<QTableWidgetItem *> selectedSourceItems)
+{
+    if (selectedRows.size() == 1)
+    {
+    }
     QList<QString> raidArrays;
     for (int i = 0; i < selectedRows.size(); ++i)
     {
@@ -483,8 +483,8 @@ void MainWindow::on_createImageTaskBtn_clicked()
     QList<MegaCLIResponse> result = MegaCLIHandler::createRaid(raidArrays, blkInfo);
     if (result.isEmpty())
     {
-        QMessageBox::critical(this, "Failed to create RAID", "Try again!");
-        return;
+        QMessageBox::critical(this, "Failed to create RAID", "Please try again!");
+        return false;
     }
 
     for (auto &res : result)
@@ -525,19 +525,32 @@ void MainWindow::on_createImageTaskBtn_clicked()
         task.notes = "";
         task.evidence = "";
         tasks.append(task);
+        megaCliHandler->reload();
         updateDestinationDisksTable();
     }
-    hiddenAreaDialog = new HiddenAreaDialog(this, tasks.first().source);
-    connect(hiddenAreaDialog, &HiddenAreaDialog::dialogClosed, this, [this]()
-            { handleCreateImageTask(); });
-    if (hiddenAreaDialog->shouldShow)
+    return true;
+}
+
+void MainWindow::makeJbodFromSourceDisk(QList<QTableWidgetItem *> &selectedSourceItems, QString &sourceImagePath, bool &retFlag)
+{
+    retFlag = true;
+    QString pd = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 1).toString();
+    QString raidState = ui->sourceDiskTable->item(selectedSourceItems[0]->row(), 0)->data(Qt::UserRole + 23).toString();
+    if (raidState == "Unknown")
     {
-        hiddenAreaDialog->show();
+        QMessageBox::critical(this, "Source disk fail", "Please re-plug the source disk!");
+        return;
     }
-    else
+    QString jbodDiskPath = MegaCLIHandler::createJbod(pd, blkInfo);
+    if (jbodDiskPath.isEmpty())
     {
-        handleCreateImageTask();
+        QMessageBox::warning(this, "Operation failed!", "");
+        return;
     }
+    ui->sourceDiskTable->setItem(selectedSourceItems[0]->row(), 2, new QTableWidgetItem(jbodDiskPath));
+
+    sourceImagePath = jbodDiskPath;
+    retFlag = false;
 }
 
 void MainWindow::cleanRaid(const Task &task)
@@ -548,6 +561,7 @@ void MainWindow::cleanRaid(const Task &task)
     QString output = process.readAllStandardOutput();
     qDebug() << output;
     qDebug() << "Clean pd" << task.pdNumber << "\nUmount" << task.mountedPath;
+    megaCliHandler->reload();
     updateDestinationDisksTable();
 }
 
@@ -631,15 +645,17 @@ void MainWindow::handleCreateImageTask()
 
         connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
                 {
-            this->stopCreateImageTaskProcess(taskProcess, task);
-            cleanRaid(); });
+                    this->stopCreateImageTaskProcess(taskProcess, task);
+                    // cleanRaid();
+                });
 
         connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
                 {
-            this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
-            taskProcess->deleteLater();
-                    cleanRaid(); });
+                    this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
+                    taskProcess->deleteLater();
+                    // cleanRaid();
+                });
 
         qDebug() << "Create image task";
         QStringList arguments;
@@ -752,15 +768,17 @@ void MainWindow::handleCreateImageTask(Task &task)
 
     connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
             {
-        this->stopCreateImageTaskProcess(taskProcess, task);
-        cleanRaid(task); });
+                this->stopCreateImageTaskProcess(taskProcess, task);
+                // cleanRaid(task);
+            });
 
     connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
             {
-        this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
-        taskProcess->deleteLater();
-                cleanRaid(task); });
+                this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
+                taskProcess->deleteLater();
+                // cleanRaid(task);
+            });
 
     qDebug() << "Create image task";
     QStringList arguments;
@@ -935,5 +953,30 @@ void MainWindow::writeTaskMetadata(const Task &task, bool success)
 
 void MainWindow::on_destinationDiskTableReloadBtn_clicked()
 {
+    megaCliHandler->reload();
     updateDestinationDisksTable();
 }
+
+// MegaDisk MainWindow::findMegaDiskBySlot(int slotNumber)
+// {
+//     for (auto &disk : megaDisks)
+//     {
+//         if (disk.slotNumber == slotNumber)
+//         {
+//             return disk;
+//         }
+//     }
+//     return MegaDisk();
+// }
+
+// MegaDisk MainWindow::findMegaDiskByName(QString name)
+// {
+//     for (auto &disk : megaDisks)
+//     {
+//         if (disk.inquiryData == name)
+//         {
+//             return disk;
+//         }
+//     }
+//     return MegaDisk();
+// }

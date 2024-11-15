@@ -15,8 +15,12 @@ class MegaCLIHandler : public QObject
 {
     Q_OBJECT
 public:
+    QList<MegaDisk> disks;
+    void reload();
     explicit MegaCLIHandler(QObject *parent = nullptr);
-    static QList<MegaDisk> getDisks();
+    QList<MegaDisk> getDisks();
+    void parserRaidMountInfo();
+    QString findMountedPath(const QString &id);
     static QList<MegaCLIResponse> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
     static MegaCLIResponse createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo);
 
@@ -25,7 +29,8 @@ public:
 signals:
 
 private:
-    static MegaDisk parseDiskInfo(const QStringList &lines);
+    QStringList raidInfoLines;
+    MegaDisk parseDiskInfo(const QStringList &lines);
 };
 
 #endif // MEGACLIHANDLER_H

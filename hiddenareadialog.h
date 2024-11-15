@@ -24,9 +24,11 @@ public:
     DCOarea checkDcoArea();
     ~HiddenAreaDialog();
     void runRemoveHpaScript();
+    void setProgressBar(int value);
 
 signals:
     void dialogClosed();
+    void handledDiskArea();
 
 protected:
     void closeEvent(QCloseEvent *event) override
@@ -38,7 +40,6 @@ protected:
 private slots:
     void onScriptFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void handleProcessOutput();
-
     void on_okeButton_clicked();
 
 private:

@@ -8,6 +8,7 @@
 #include <QProcess>
 #include <QThread>
 #include <QDateTime>
+#include <QTableWidgetItem>
 #include <unistd.h>
 
 #include "settingdialog.h"
@@ -34,6 +35,9 @@ public:
     ~MainWindow();
 
     void prepareMega();
+    HiddenAreaDialog *hiddenAreaDialog;
+    MegaDisk findMegaDiskBySlot(int slotNumber);
+    MegaDisk findMegaDiskByName(QString name);
 
 private slots:
 
@@ -65,6 +69,10 @@ private slots:
 
     void on_createImageTaskBtn_clicked();
 
+    bool makeRaidArrayFromDestinationDicks(QList<int> selectedRows, QString sourceImagePath, QList<QTableWidgetItem *> selectedSourceItems);
+
+    void makeJbodFromSourceDisk(QList<QTableWidgetItem *> &selectedSourceItems, QString &sourceImagePath, bool &retFlag);
+
     void cleanRaid(const Task &task);
 
     void cleanRaid();
@@ -83,10 +91,10 @@ private:
     Ui::MainWindow *ui;
     bool isRootUser;
     SettingDialog *settingDialog;
-    HiddenAreaDialog *hiddenAreaDialog;
     BlocksInfo *blkInfo;
     QList<Block> blocks;
     QList<Task> tasks;
+    MegaCLIHandler *megaCliHandler;
 
     void setupWipePage();
     void setupDashboardPage();

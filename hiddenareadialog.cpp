@@ -134,31 +134,43 @@ void HiddenAreaDialog::runRemoveHpaScript()
     connect(rescanHpaArea, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &HiddenAreaDialog::onScriptFinished);
 
+    qDebug() << "Device rescan begin!";
     rescanHpaArea->start("device_rescan", QStringList() << path);
 }
 
 void HiddenAreaDialog::handleProcessOutput()
 {
+    qDebug() << "Device replug!";
     QByteArray output = rescanHpaArea->readAllStandardOutput();
     QString outputStr = QString::fromLocal8Bit(output);
 
     // Log the output
     qDebug() << "Process output:" << outputStr;
-    ui->rmHpaProgressBar->setValue(50);
+    ui->rmHpaProgressBar->setValue(20);
 }
 
 void HiddenAreaDialog::onScriptFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
+    qDebug() << "Rescan drive!";
     if (exitStatus == QProcess::NormalExit && exitCode == 0)
     {
-        ui->rmHpaProgressBar->setValue(100);
+        ui->rmHpaProgressBar->setValue(30);
     }
     else
     {
         qDebug() << "Error", "Failed to remove HPA area. Please try again.";
     }
-    close();
     rescanHpaArea->deleteLater();
+    emit handledDiskArea();
+}
+
+void HiddenAreaDialog::setProgressBar(int value)
+{
+    if (this->ui->rmHpaProgressBar->isHidden())
+    {
+        this->ui->rmHpaProgressBar->show();
+    }
+    this->ui->rmHpaProgressBar->setValue(value);
 }
 
 void HiddenAreaDialog::on_okeButton_clicked()
@@ -170,6 +182,6 @@ void HiddenAreaDialog::on_okeButton_clicked()
     }
     else
     {
-        close();
+        emit handledDiskArea();
     }
 }

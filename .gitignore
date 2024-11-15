@@ -4,6 +4,12 @@
 build/
 .cache/
 cmake-build-debug/
+.idea/
+
+MegaSAS.log
+storcli.log
+storcli.log.1
+storcli.log.2
 
 *~
 *.autosave
