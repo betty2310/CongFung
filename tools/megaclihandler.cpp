@@ -13,7 +13,7 @@ MegaCLIHandler::MegaCLIHandler(QObject *parent)
 void MegaCLIHandler::reload()
 {
     this->disks.clear();
-    parserRaidMountInfo();
+    parseRaidMountInfo();
     getDisks();
 }
 
@@ -27,14 +27,13 @@ QList<MegaDisk> MegaCLIHandler::getDisks()
         if (i + 6 < output.size())
         {
             MegaDisk disk = parseDiskInfo(output.mid(i, 7));
-            disk.pdNumber = extractLDRaidInfo(QString("%1:%2").arg(disk.enclosureDeviceId).arg(disk.slotNumber), VD).toInt();
             disks.append(disk);
         }
     }
     return this->disks;
 }
 
-void MegaCLIHandler::parserRaidMountInfo()
+void MegaCLIHandler::parseRaidMountInfo()
 {
     QProcess process;
     process.start("raid-mount-info");
@@ -44,7 +43,7 @@ void MegaCLIHandler::parserRaidMountInfo()
     raidInfoLines = lines;
 }
 
-QString MegaCLIHandler::extractLDRaidInfo(const QString &id, RaidArrayInfo infoType)
+QString MegaCLIHandler::extractLDRaidInfo(const QString &id, RaidArrayInfo infoType, int key)
 {
     QString res = "";
     for (const QString &line : raidInfoLines)
@@ -56,7 +55,7 @@ QString MegaCLIHandler::extractLDRaidInfo(const QString &id, RaidArrayInfo infoT
             252:2 -> VD0 -> /dev/sda -> /dev/sda1 -> /mnt/sda1
             252:0 -> VD1 -> /dev/sdd -> /dev/sdd1 -> Not mounted
             */
-            QString ld = parts[1].trimmed();
+            QString ld = parts[key].trimmed();
             switch (infoType)
             {
             case PD:
@@ -71,7 +70,6 @@ QString MegaCLIHandler::extractLDRaidInfo(const QString &id, RaidArrayInfo infoT
             case MOUNTPOINT:
                 if (ld == id)
                 {
-                    qDebug() << "mounted path" << parts[4];
                     if (parts[4] == " Not mounted")
                     {
                         res = "";
@@ -82,6 +80,7 @@ QString MegaCLIHandler::extractLDRaidInfo(const QString &id, RaidArrayInfo infoT
                     }
                     qDebug() << "Result: " << res;
                 }
+                break;
             case BLOCK:
                 if (ld == id)
                 {
@@ -111,7 +110,11 @@ MegaDisk MegaCLIHandler::parseDiskInfo(const QStringList &lines)
     disk.inquiryData = lines[5].split(':').last().trimmed();
     disk.deviceSpeed = lines[6].split(':').last().trimmed();
     QString pd = QString("%1:%2").arg(disk.enclosureDeviceId).arg(disk.slotNumber);
-    disk.mountedPath = extractLDRaidInfo(pd, MOUNTPOINT);
+    disk.mountedPath = extractLDRaidInfo(pd, MOUNTPOINT, 0);
+    if (!disk.mountedPath.isEmpty())
+    {
+        qDebug() << "Mounted path: " << disk.mountedPath;
+    }
     return disk;
 }
 
@@ -183,8 +186,8 @@ MegaCLIResponse MegaCLIHandler::createRaid(const QString &raidArray, const QStri
     }
     // TODO: make sure wait raid command to be created
     QThread::msleep(200);
-    parserRaidMountInfo();
-    response.path = extractLDRaidInfo(response.pdNumber, BLOCK);
+    parseRaidMountInfo();
+    response.path = extractLDRaidInfo(response.pdNumber, BLOCK, 1);
     if (response.path != "")
     {
         qDebug() << "The associated path of this raid array is: " << response.path;

@@ -2,13 +2,14 @@
 #include "./ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), hiddenAreaDialog(new HiddenAreaDialog(this)), blkInfo(new BlocksInfo(this)), megaCliHandler(new MegaCLIHandler(this))
+    : QMainWindow(parent), ui(new Ui::MainWindow), isRootUser(false), settingDialog(new SettingDialog(this)), hiddenAreaDialog(new HiddenAreaDialog(this)), blkInfo(new BlocksInfo(this))
 {
     ui->setupUi(this);
 
     ui->stackedWidget->setCurrentWidget(ui->dashboardPage);
     prepareMega();
 
+    megaCliHandler = new MegaCLIHandler(this);
     setupDashboardPage();
     setupWipePage();
     setupCreateForensicImagePage();
@@ -474,8 +475,8 @@ bool MainWindow::makeRaidArrayFromDestinationDicks(QList<MegaDisk> destinationDi
     {
         QString imageName = ui->imageNameTextBox->text().trimmed();
         int command = ui->imageFormatComboBox->currentIndex();
-        Task task = makeTask(sourceDisk, destinationDisks[0].mountedPath, destinationDisks[0].mountedPath, imageName, command, QString("%1").arg(destinationDisks[0].pdNumber));
-        tasks.append(task);
+        Task task = makeTask(sourceDisk, destinationDisks[0].path, destinationDisks[0].mountedPath, imageName, command, QString("%1").arg(destinationDisks[0].pdNumber));
+        currentTasks.append(task);
         // megaCliHandler->reload();
         // updateDestinationDisksTable();
         return true;
@@ -502,7 +503,7 @@ bool MainWindow::makeRaidArrayFromDestinationDicks(QList<MegaDisk> destinationDi
         QString imageName = ui->imageNameTextBox->text().trimmed();
         int command = ui->imageFormatComboBox->currentIndex();
         Task task = makeTask(sourceDisk, res.path, "", imageName, command, res.pdNumber);
-        tasks.append(task);
+        currentTasks.append(task);
         // megaCliHandler->reload();
         // updateDestinationDisksTable();
     }
@@ -594,21 +595,24 @@ void MainWindow::cleanRaid(const Task &task)
 
 void MainWindow::cleanRaid()
 {
-    for (auto &task : tasks)
-    {
-        cleanRaid(task);
-    }
+    megaCliHandler->reload();
+    // for (auto &task : currentTasks)
+    // {
+    //     cleanRaid(task);
+    // }
 }
 
 void MainWindow::handleCreateImageTask()
 {
-    if (tasks.count() == 1)
+    // TODO: tasks need to be clear after finish or cancel operation
+    // need to make a historyTasks
+    if (currentTasks.count() == 1)
     {
-        handleCreateImageTask(tasks[0]);
+        handleCreateImageTask(currentTasks[0]);
     }
-    else if (tasks.count() == 2)
+    else if (currentTasks.count() == 2)
     {
-        for (auto &task : tasks)
+        for (auto &task : currentTasks)
         {
             QProcess process;
             qDebug() << "Prepare disk" << task.destination;
@@ -626,14 +630,14 @@ void MainWindow::handleCreateImageTask()
         // Add task to dashboard
         int rowCount = ui->dashboardTable->rowCount();
         ui->dashboardTable->insertRow(rowCount);
-        ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(tasks[0].id));
-        ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(tasks[0].sourceModel));
-        QString destination = QString("%1/%2").arg(tasks[0].mountedPath).arg(tasks[0].imageName);
-        if (tasks[0].command == DC3DD)
+        ui->dashboardTable->setItem(rowCount, 0, new QTableWidgetItem(currentTasks[0].id));
+        ui->dashboardTable->setItem(rowCount, 1, new QTableWidgetItem(currentTasks[0].sourceModel));
+        QString destination = QString("%1/%2").arg(currentTasks[0].mountedPath).arg(currentTasks[0].imageName);
+        if (currentTasks[0].command == DC3DD)
         {
             destination += ".dd";
         }
-        else if (tasks[0].command == EWFACQUIRE)
+        else if (currentTasks[0].command == EWFACQUIRE)
         {
             destination += ".e01";
         }
@@ -644,11 +648,11 @@ void MainWindow::handleCreateImageTask()
         ui->dashboardTable->setItem(rowCount, 2, new QTableWidgetItem(destination));
         ui->dashboardTable->setItem(rowCount, 6, new QTableWidgetItem("Running"));
 
-        tasks[0].caseNumber = ui->caseNumberTextBox->text().trimmed();
-        tasks[0].description = ui->descriptionTextBox->text().trimmed();
-        tasks[0].evidence = ui->evidenceNumberTextBox->text().trimmed();
-        tasks[0].notes = ui->notesTextBox->text().trimmed();
-        tasks[0].examiner = ui->examinerTextBox->text().trimmed();
+        currentTasks[0].caseNumber = ui->caseNumberTextBox->text().trimmed();
+        currentTasks[0].description = ui->descriptionTextBox->text().trimmed();
+        currentTasks[0].evidence = ui->evidenceNumberTextBox->text().trimmed();
+        currentTasks[0].notes = ui->notesTextBox->text().trimmed();
+        currentTasks[0].examiner = ui->examinerTextBox->text().trimmed();
 
         // Add Stop button
         QPushButton *stopButton = new QPushButton("Stop");
@@ -661,7 +665,7 @@ void MainWindow::handleCreateImageTask()
 
         // run dc3dd command, like: dc3dd if=/dev/sdc1 of=/mnt/md0/test hash=md5 log=test.md5 bufsz=16M
 
-        Task task = tasks[0];
+        Task task = currentTasks[0];
 
         auto *taskProcess = new QProcess(this);
         connect(taskProcess, &QProcess::readyReadStandardError, this, [this, taskProcess, task]()
@@ -673,13 +677,14 @@ void MainWindow::handleCreateImageTask()
         connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
                 {
                     this->stopCreateImageTaskProcess(taskProcess, task);
-                    // cleanRaid();
-                });
+                    currentTasks.clear();
+                    cleanRaid(); });
 
         connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
                 {
                     this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
+                    currentTasks.clear();
                     taskProcess->deleteLater();
                     // cleanRaid();
                 });
@@ -689,8 +694,8 @@ void MainWindow::handleCreateImageTask()
         if (task.command == DC3DD)
         {
             arguments << QString("if=%1").arg(task.source)
-                      << QString("of=%1/%2.dd").arg(tasks[0].mountedPath).arg(task.imageName)
-                      << QString("of=%1/%2.dd").arg(tasks[1].mountedPath).arg(task.imageName)
+                      << QString("of=%1/%2.dd").arg(currentTasks[0].mountedPath).arg(task.imageName)
+                      << QString("of=%1/%2.dd").arg(currentTasks[1].mountedPath).arg(task.imageName)
                       << "hash=md5"
                       << QString("log=%1.md5").arg(task.imageName)
                       << "bufsz=16M";
@@ -698,8 +703,8 @@ void MainWindow::handleCreateImageTask()
         }
         else if (task.command == EWFACQUIRE)
         {
-            arguments << task.source << "-t" << QString("%1/%2").arg(tasks[0].mountedPath).arg(task.imageName)
-                      << "-2" << QString("%1/%2").arg(tasks[1].mountedPath).arg(task.imageName)
+            arguments << task.source << "-t" << QString("%1/%2").arg(currentTasks[0].mountedPath).arg(task.imageName)
+                      << "-2" << QString("%1/%2").arg(currentTasks[1].mountedPath).arg(task.imageName)
                       << "-C" << task.caseNumber
                       << "-D" << task.description
                       << "-e" << task.examiner
@@ -746,9 +751,11 @@ void MainWindow::handleCreateImageTask(Task &task)
         qDebug() << output;
         QStringList lines = output.split("\n", Qt::SkipEmptyParts);
         QString mountedPath = lines.last();
-        qDebug() << mountedPath;
+        megaCliHandler->reload();
         task.mountedPath = mountedPath;
     }
+
+    qDebug() << "Task mounted path" << task.mountedPath;
 
     task.id = QString("createImageTask_%1_%2").arg(task.imageName).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
     // Add task to dashboard
@@ -799,12 +806,15 @@ void MainWindow::handleCreateImageTask(Task &task)
     connect(stopButton, &QPushButton::clicked, this, [this, taskProcess, task]()
             {
                 this->stopCreateImageTaskProcess(taskProcess, task);
-                cleanRaid(task); });
+                currentTasks.clear();
+                // cleanRaid(task);
+            });
 
     connect(taskProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this, taskProcess, task](int exitCode, QProcess::ExitStatus exitStatus)
             {
                 this->onCreateImageTaskFinished(task, exitCode == 0 && exitStatus == QProcess::NormalExit);
+                currentTasks.clear();
                 taskProcess->deleteLater();
                 // cleanRaid(task);
             });

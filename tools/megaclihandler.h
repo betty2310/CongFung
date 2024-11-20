@@ -29,8 +29,9 @@ public:
     void reload();
     explicit MegaCLIHandler(QObject *parent = nullptr);
     QList<MegaDisk> getDisks();
-    void parserRaidMountInfo();
-    QString extractLDRaidInfo(const QString &id, RaidArrayInfo infoType);
+    void parseRaidMountInfo();
+
+    QString extractLDRaidInfo(const QString &id, RaidArrayInfo infoType, int key = 0);
     QList<MegaCLIResponse> createRaid(const QList<QString> &diskParis, BlocksInfo *blksInfo);
     MegaCLIResponse createRaid(const QString &raidArray, const QString &raidLevel, BlocksInfo *blksInfo);
 

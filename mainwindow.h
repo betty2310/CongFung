@@ -9,6 +9,8 @@
 #include <QThread>
 #include <QDateTime>
 #include <QTableWidgetItem>
+#include <QQueue>
+
 #include <unistd.h>
 
 #include "settingdialog.h"
@@ -89,7 +91,8 @@ private:
     SettingDialog *settingDialog;
     BlocksInfo *blkInfo;
     QList<Block> blocks;
-    QList<Task> tasks;
+    QList<Task> currentTasks;
+    QQueue<Task> allTasks;
     MegaCLIHandler *megaCliHandler;
 
     void setupWipePage();
